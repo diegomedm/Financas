@@ -1133,16 +1133,20 @@ async function saveEditCategoriaModal(id, catOriginal){
 
 function deleteCategoriaModal(id){
   showConfirm(
-    'Excluir categoria? Os gastos vinculados perdem a referência mas não são apagados.',
-    async function(){
-      try{
-        await budgetDel(id);
-        toast('Categoria excluída','var(--red)');
-        renderBudget();
-      }catch(e){
-        console.error('[deleteCategoriaModal]',e);
-        toast('Erro ao excluir','var(--red)');
-      }
-    }
+    'Excluir categoria',
+    'Os gastos vinculados perdem a referência mas não são apagados.',
+    [
+      {label:'Cancelar',cls:'btn-ghost',action:function(){}},
+      {label:'Excluir',cls:'btn-danger',action:async function(){
+        try{
+          await budgetDel(id);
+          toast('Categoria excluída','var(--red)');
+          renderBudget();
+        }catch(e){
+          console.error('[deleteCategoriaModal]',e);
+          toast('Erro ao excluir','var(--red)');
+        }
+      }}
+    ]
   );
 }
