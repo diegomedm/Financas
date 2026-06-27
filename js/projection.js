@@ -62,8 +62,21 @@ async function renderProj(){
     :budgets;
 
   /* Construir Set de IDs realizados por mes: doneKey => budgetId_YYYYMM */
-  /* Indexar por chave completa para lookup O(1) dentro do loop */
   var doneKeySet=new Set(allDone.map(function(d){return d.key;}));
+
+  /* Pré-carregar itens de fatura de cartão para cada mês do horizonte */
+  var cartaoByMonth=[];
+  for(var pi=0;pi<projPeriods;pi++){
+    var pm=(curMonth+pi)%12;
+    var py=curYear+Math.floor((curMonth+pi)/12);
+    try{
+      var citens=await getCartaoBudgetItems(pm,py);
+      if(pessoaFilter)citens=citens.filter(function(c){return c.pessoaId===pessoaFilter;});
+      cartaoByMonth.push(citens);
+    }catch(e){
+      cartaoByMonth.push([]);
+    }
+  }
 
   var html='',totIncome=0,totExpense=0,totBalance=0;
 
@@ -76,23 +89,25 @@ async function renderProj(){
     var income=monthResult.income;
     var expense=monthResult.expense+monthResult.credit;
 
+    var mm=String(m+1).padStart(2,'0');
+
     /* Somar itens de budget pendentes (nao realizados) para este mes */
     for(var j=0;j<budgetsFiltered.length;j++){
       var item=budgetsFiltered[j];
       if(!_budgetItemAppliesTo(item,y,m))continue;
-
-      /* Verificar se foi marcado como realizado neste mes */
-      /* doneKey = budgetId_YYYYMM  ex: 5_202607 */
-      var mm=String(m+1).padStart(2,'0');
       var key=item.id+'_'+y+mm;
       if(doneKeySet.has(key))continue; /* ja gerou TX, nao duplicar */
-
       var val=item.value||0;
-      if(item.type==='income'){
-        income+=val;
-      }else{
-        expense+=val;
-      }
+      if(item.type==='income'){income+=val;}else{expense+=val;}
+    }
+
+    /* Somar faturas de cartao pendentes (nao realizadas) para este mes */
+    var citensDoMes=cartaoByMonth[i]||[];
+    for(var k=0;k<citensDoMes.length;k++){
+      var citem=citensDoMes[k];
+      var ckey=citem.id+'_'+y+mm; /* ex: cartao_3_202607 */
+      if(doneKeySet.has(ckey))continue; /* fatura ja foi marcada como realizada — TX credit ja contabilizada acima */
+      expense+=citem.value||0;
     }
 
     var balance=income-expense;
