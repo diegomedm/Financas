@@ -4,6 +4,14 @@
 
 ---
 
+**2026-06-27 — Encerramento de sessão**
+- Feito: melhorias pós-Sprint 5 entregues e em produção; .claude atualizado (architecture, backlog, archive); roadmap documentado
+- Decisões: ordem do roadmap definida — UX/UI review → Onboarding → OFX/QFX importer; Claude Design será usado na etapa de UX/UI (quando disponível)
+- Artefatos: .claude/progress/current.md (roadmap documentado), .claude/progress/log.md (esta entrada)
+- Pendências: nenhuma — próxima sessão começa pelo roadmap
+
+---
+
 **2026-06-27 — Senior Dev**
 - Feito: Melhorias pós-Sprint 5 — botão 📌 em todas as 5 abas (visibility:hidden no month-nav); categorias ocultas da lista de orçamento (isCategoriaOnly filter); saldo restante de categorias na projeção (refMonth em diante); resumo de orçamento atualizado com realizado e total das categorias; SW v10
 - Decisões: saldo restante = max(0, orçado - realizado); meses < refMonth ignorados na projeção; realizado das categorias entra no X do resumo, restante entra no Y
