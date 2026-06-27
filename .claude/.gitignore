@@ -1,0 +1,5 @@
+# Não versionar secrets ou dados sensíveis
+*.env
+*.key
+*.pem
+secrets/
