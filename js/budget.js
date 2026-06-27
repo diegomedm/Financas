@@ -1033,8 +1033,8 @@ function _renderCategoriasBudget(allBudgetItems, todosGastos, todasTx, cartoes){
 }
 
 function showAddCategoriaModal(){
-  showModal(
-    'Nova Categoria Orçada',
+  openModal(
+    '<div class="modal-title">Nova Categoria Orçada</div>'+
     '<div class="form-group">'+
       '<label>Nome</label>'+
       '<input id="cat-nome" placeholder="Ex: Gasolina, Mercado..." oninput="clearFieldError(\'cat-nome\')">'+
@@ -1087,8 +1087,8 @@ async function showEditCategoriaModal(id){
   try{all=await budgetAll();}catch(e){}
   var cat=all.find(function(b){return b.id===id;});
   if(!cat){toast('Categoria não encontrada','var(--red)');return;}
-  showModal(
-    'Editar Categoria',
+  openModal(
+    '<div class="modal-title">Editar Categoria</div>'+
     '<div class="form-group">'+
       '<label>Nome</label>'+
       '<input id="cat-nome" value="'+cat.name.replace(/"/g,'&quot;')+'" oninput="clearFieldError(\'cat-nome\')">'+
