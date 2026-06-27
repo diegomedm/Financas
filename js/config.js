@@ -183,6 +183,22 @@ async function clearAll(){
   }
 }
 
+async function forceRefresh(){
+  try{
+    if('serviceWorker' in navigator){
+      const regs=await navigator.serviceWorker.getRegistrations();
+      for(const reg of regs)await reg.unregister();
+    }
+    if('caches' in window){
+      const keys=await caches.keys();
+      for(const k of keys)await caches.delete(k);
+    }
+    window.location.reload(true);
+  }catch(e){
+    window.location.reload(true);
+  }
+}
+
 function renderCfg(){
   const tog=document.getElementById('toggle-dark');
   if(tog)tog.checked=!document.body.classList.contains('light');

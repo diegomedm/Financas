@@ -1,4 +1,4 @@
-const CACHE = 'financas-v7';
+const CACHE = 'financas-v8';
 
 const urlsToCache = [
   self.registration.scope,
