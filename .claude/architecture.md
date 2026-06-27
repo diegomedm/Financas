@@ -1,6 +1,6 @@
 # Visão de Arquitetura — Financas
 
-**Atualizado em:** 2026-06-26
+**Atualizado em:** 2026-06-27
 **Status:** Estável — sem mudanças estruturais previstas
 
 ## Visão geral do sistema
@@ -9,10 +9,10 @@ PWA single-page de finanças pessoais. Sem backend, sem build tool, sem framewor
 
 ```
 index.html  (entry point + HTML + CSS inline ~2k linhas)
-sw.js       (Service Worker — cache 'financas-v3')
+sw.js       (Service Worker — cache 'financas-v10')
 js/
   globals.js → db.js → utils.js → pessoas.js
-  → transactions.js → cards.js → budget.js
+  → transactions.js → cards-modal.js → cards-render.js → budget.js
   → projection.js → config.js → app.js
 ```
 
@@ -21,7 +21,7 @@ js/
 | Camada | Tecnologia | Justificativa |
 |--------|-----------|---------------|
 | Frontend | HTML5 + CSS3 + ES2020 | Sem framework — zero dependências, zero build |
-| Armazenamento | IndexedDB v5 (`financas_pwa_v2`) | Persistência local, suporta objetos complexos |
+| Armazenamento | IndexedDB v6 (`financas_pwa_v2`) | Persistência local, suporta objetos complexos |
 | Cache in-memory | `_dbCache` em globals.js | Reduz roundtrips ao IndexedDB |
 | Offline | Service Worker (sw.js) | Cache-first com network fallback |
 | Deploy | GitHub Pages | Gratuito, sem servidor |
@@ -31,32 +31,34 @@ js/
 
 | Arquivo | Linhas | Responsabilidade |
 |---------|--------|-----------------|
-| `globals.js` | 12 | Constantes, variáveis globais, API de cache |
-| `db.js` | 116 | IndexedDB helpers CRUD para todos os stores |
-| `utils.js` | 146 | Modal, toast, numpad, validação inline, formatação |
-| `pessoas.js` | 195 | CRUD e render de responsáveis |
-| `transactions.js` | 681 | Lançamentos + dashboard |
-| `cards.js` | 1.030 | Cartões + gastos + faturas + recorrentes (candidato a split) |
-| `budget.js` | 893 | Orçamento + recorrência + atraso/pendência |
-| `projection.js` | 36 | Projeção de fluxo de caixa |
-| `config.js` | 189 | Export/import v6, temas, clear |
-| `app.js` | 97 | PWA init, Service Worker, nav, renderAll() |
+| `globals.js` | ~18 | Constantes, variáveis globais, API de cache, refMonth/refYear |
+| `db.js` | ~130 | IndexedDB helpers CRUD para todos os stores |
+| `utils.js` | ~146 | Modal, toast, numpad, validação inline, formatação |
+| `pessoas.js` | ~195 | CRUD e render de responsáveis |
+| `transactions.js` | ~700 | Lançamentos + dashboard + select categoria |
+| `cards-modal.js` | ~700 | Modais de cartão, gasto, recorrente (split de cards.js) |
+| `cards-render.js` | ~400 | Render de faturas e cartões (split de cards.js) |
+| `budget.js` | ~1.000 | Orçamento + categorias orçadas + recorrência + resumo |
+| `projection.js` | ~160 | Projeção de fluxo de caixa + categorias |
+| `config.js` | ~215 | Export/import v6, temas, forceRefresh, clear |
+| `app.js` | ~112 | PWA init, Service Worker, nav, refMonth, renderAll() |
 
 **REGRA CRÍTICA:** Usar `<script src>` sequencial — NUNCA `<script type="module">`. Módulos type=module carregam em paralelo e causam `undefined` errors nas funções globais.
 
-## IndexedDB — Schema v5
+## IndexedDB — Schema v6
 
 **Database:** `financas_pwa_v2`
 
 | Store | keyPath | Índices | Uso |
 |-------|---------|---------|-----|
-| `tx` | id (autoincrement) | `ym` | Lançamentos financeiros |
-| `budget` | id (autoincrement) | — | Itens de orçamento |
+| `tx` | id (autoincrement) | `ym` | Lançamentos financeiros; campo `categoriaId` opcional |
+| `budget` | id (autoincrement) | — | Itens de orçamento; `isCategoriaOnly:true` + `categoriaKey` para categorias puras |
 | `budgetDone` | key (string) | — | Marcações: `budgetId_YYYYMM` ou `cartao_ID_YYYYMM` |
 | `pessoas` | id (autoincrement) | — | Responsáveis |
 | `cartoes` | id (autoincrement) | — | Cartões de crédito |
-| `gastos` | id (autoincrement) | `cartaoId` | Gastos de cartão |
+| `gastos` | id (autoincrement) | `cartaoId` | Gastos de cartão; campo `categoriaId` opcional |
 | `recorrentes` | id (autoincrement) | `cartaoId` | Cobranças fixas mensais |
+| `categoriasCartao` | id (autoincrement) | — | Legado Sprint 4b — não usar (store preservada para compat) |
 
 ## Cache em Memória
 
