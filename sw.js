@@ -1,8 +1,9 @@
-const CACHE = 'financas-v4';
+const CACHE = 'financas-v5';
 
 const urlsToCache = [
   self.registration.scope,
   self.registration.scope + 'index.html',
+  self.registration.scope + 'js/chart.min.js',
   self.registration.scope + 'js/globals.js',
   self.registration.scope + 'js/db.js',
   self.registration.scope + 'js/utils.js',

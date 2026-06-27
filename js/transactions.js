@@ -29,7 +29,7 @@ function entryFormHtml(t=null){
           <option value="income"${defType==='income'?' selected':''}>💵 Receita</option>
           ${(isEdit&&t?.type==='fixed')?'<option value="fixed"'+(defType==='fixed'?' selected':'')+'>🏠 Despesa Fixa</option>':''}
           <option value="variable"${defType==='variable'?' selected':''}>🛒 Despesa Variável</option>
-          ${(isEdit&&(t?.fromBudget||t?.fromCartao))?'<option value="credit" selected>💳 Fatura cartão</option>':''}
+          ${(isEdit&&t?.fromCartao)?'<option value="credit" selected>💳 Fatura cartão</option>':''}
         </select>
       </div>
       <div class="form-group">
@@ -566,10 +566,183 @@ async function renderDash(){
     }else{
       if(pessoaSummaryCard)pessoaSummaryCard.style.display='none';
     }
+    renderCharts(all, filteredRows);
   }catch(e){
     console.error('[renderDash]',e);
     toast('Erro ao carregar dashboard','var(--red)');
   }
+}
+
+function renderCharts(all, filteredRows){
+  if(typeof Chart==='undefined')return;
+  _renderChartComposition(filteredRows);
+  const histRows=pessoaFilter?all.filter(function(t){return t.pessoaId===pessoaFilter;}):all;
+  _renderChartHistory(histRows);
+}
+
+function _renderChartComposition(rows){
+  const card=document.getElementById('chart-composition-card');
+  if(!card)return;
+
+  const fixed=rows.filter(function(t){return t.type==='fixed';}).reduce(function(s,t){return s+t.value;},0);
+  const variable=rows.filter(function(t){return t.type==='variable';}).reduce(function(s,t){return s+t.value;},0);
+  const credit=rows.filter(function(t){return t.type==='credit';}).reduce(function(s,t){return s+t.value;},0);
+
+  // RN-02: omitir tipos com valor zero; RN-03: sem dados → mensagem
+  if(fixed<=0&&variable<=0&&credit<=0){
+    if(_chartComposition){_chartComposition.destroy();_chartComposition=null;}
+    card.innerHTML='<div class="card-title">Composição das despesas</div>'
+      +'<div style="padding:16px 0;text-align:center;color:var(--text3);font-size:13px">Sem despesas neste mês</div>';
+    return;
+  }
+
+  const labels=[];
+  const values=[];
+  const colors=[];
+  if(fixed>0){labels.push('Fixas');values.push(fixed);colors.push('#3b82f6');}
+  if(variable>0){labels.push('Variáveis');values.push(variable);colors.push('#f59e0b');}
+  if(credit>0){labels.push('Cartão');values.push(credit);colors.push('#a855f7');}
+
+  // Destruir instância anterior e recriar canvas — evita sobreposição (RN-07)
+  if(_chartComposition){_chartComposition.destroy();_chartComposition=null;}
+  card.innerHTML='<div class="card-title">Composição das despesas</div>'
+    +'<canvas id="chart-composition"></canvas>';
+
+  const ctx=document.getElementById('chart-composition').getContext('2d');
+  _chartComposition=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:labels,
+      datasets:[{
+        data:values,
+        backgroundColor:colors,
+        borderRadius:4,
+        borderSkipped:false
+      }]
+    },
+    options:{
+      indexAxis:'y',
+      animation:false,
+      responsive:true,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          callbacks:{
+            label:function(ctx){return ' R$ '+fmt(ctx.parsed.x);}
+          }
+        }
+      },
+      scales:{
+        x:{
+          beginAtZero:true,
+          ticks:{
+            callback:function(v){return 'R$ '+fmt(v);},
+            color:'var(--text3)',
+            font:{size:10}
+          },
+          grid:{color:'var(--border)'}
+        },
+        y:{
+          ticks:{color:'var(--text2)',font:{size:12}},
+          grid:{display:false}
+        }
+      }
+    }
+  });
+}
+
+function _renderChartHistory(all){
+  const card=document.getElementById('chart-history-card');
+  if(!card)return;
+
+  const MONTH_ABBR=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+  // Calcular os 6 meses terminando em curMonth/curYear (RN-05)
+  const months=[];
+  for(var i=5;i>=0;i--){
+    var m=curMonth-i;
+    var y=curYear;
+    while(m<0){m+=12;y--;}
+    months.push({m:m,y:y});
+  }
+
+  // Montar labels: nome abreviado + "/AA" quando o ano muda em relação ao anterior
+  var prevYear=null;
+  const labels=months.map(function(entry){
+    var label=MONTH_ABBR[entry.m];
+    if(prevYear!==null&&entry.y!==prevYear){label=label+'/'+String(entry.y).slice(2);}
+    else if(prevYear===null){label=label+'/'+String(entry.y).slice(2);}
+    prevYear=entry.y;
+    return label;
+  });
+
+  // Calcular receita e saída para cada mês (RN-01: saída = expense + credit)
+  const incomeData=[];
+  const expenseData=[];
+  months.forEach(function(entry){
+    var d=calcMonth(all,entry.y,entry.m);
+    incomeData.push(d.income);
+    expenseData.push(d.expense+d.credit);
+  });
+
+  // Destruir e recriar (RN-07)
+  if(_chartHistory){_chartHistory.destroy();_chartHistory=null;}
+  card.innerHTML='<div class="card-title">Receita vs Saída — últimos 6 meses</div>'
+    +'<canvas id="chart-history"></canvas>';
+
+  const ctx=document.getElementById('chart-history').getContext('2d');
+  _chartHistory=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:labels,
+      datasets:[
+        {
+          label:'Receita',
+          data:incomeData,
+          backgroundColor:'#22c55e',
+          borderRadius:3,
+          borderSkipped:false
+        },
+        {
+          label:'Saída',
+          data:expenseData,
+          backgroundColor:'#ef4444',
+          borderRadius:3,
+          borderSkipped:false
+        }
+      ]
+    },
+    options:{
+      animation:false,
+      responsive:true,
+      plugins:{
+        legend:{
+          display:true,
+          labels:{color:'var(--text2)',font:{size:11}}
+        },
+        tooltip:{
+          callbacks:{
+            label:function(ctx){return ' '+ctx.dataset.label+': R$ '+fmt(ctx.parsed.y);}
+          }
+        }
+      },
+      scales:{
+        x:{
+          ticks:{color:'var(--text3)',font:{size:11}},
+          grid:{display:false}
+        },
+        y:{
+          beginAtZero:true,
+          ticks:{
+            callback:function(v){return 'R$ '+fmt(v);},
+            color:'var(--text3)',
+            font:{size:10}
+          },
+          grid:{color:'var(--border)'}
+        }
+      }
+    }
+  });
 }
 
 function filterTx(f,btn){

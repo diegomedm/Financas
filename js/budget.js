@@ -670,7 +670,7 @@ async function _toggleBudgetDoneInternal(budgetId,doneDate){
         name:item.name,value:txVal,rawExpr:item.rawExpr||null,
         subitems:txSubs,type:item.type,
         month:curMonth,year:curYear,ym:ym(curYear,curMonth),
-        date:doneDate!==undefined?doneDate:dateStr,obs:item.obs||'',pessoaId:item.pessoaId||null,
+        date:dateStr,paidDate:doneDate||'',obs:item.obs||'',pessoaId:item.pessoaId||null,
         fromBudget:true,createdAt:Date.now()
       });
       await donePut({key,budgetId:id,txId,doneAt:Date.now()});

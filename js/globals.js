@@ -10,3 +10,5 @@ let _numpadExpr='', _numpadTarget=null, _numpadResolve=null;
 let _dbCache={};
 function invalidateCache(store){delete _dbCache[store];}
 function invalidateAllCache(){_dbCache={};}
+let _chartComposition=null;
+let _chartHistory=null;

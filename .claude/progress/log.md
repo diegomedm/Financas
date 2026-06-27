@@ -3,6 +3,14 @@
 > Arquivo append-only. Nunca editar entradas existentes. Sempre adicionar no topo.
 
 ---
+**2026-06-27 — Senior Software Engineer**
+- Feito: Sprint 3 implementado — dois gráficos Chart.js no dashboard
+- Decisões: arrow functions evitadas em callbacks Chart.js (mobile safety); label do primeiro mês do Gráfico B sempre inclui "/AA"; destroy+innerHTML antes de new Chart para limpar canvas fantasma sem depender de .destroy() sozinho; renderCharts chamado dentro do try de renderDash para aproveitar catch existente
+- Artefatos: js/globals.js (2 variáveis novas), js/transactions.js (renderCharts + _renderChartComposition + _renderChartHistory + chamada em renderDash), index.html (2 containers + script chart.min.js), sw.js (cache v5 + entrada chart.min.js)
+- Pendências: Code Reviewer revisar; QA validar CAs da spec; confirmar que js/chart.min.js UMD 4.4.4 está presente no repo; revisar com PO se Gráfico B deve respeitar pessoaFilter (spec US-04 indica sim — implementação atual usa all sem filtro)
+---
+
+---
 **2026-06-26 — QA Engineer**
 - Feito: Verificações estáticas Sprint 2 — 17/17 checks PASSOU; plano de testes produzido com 23 CTs
 - Decisões: nenhum bloqueante estático encontrado; Sprint 2 liberado para validação manual no browser

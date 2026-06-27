@@ -1,34 +1,35 @@
 # Estado Atual do Projeto
 
 **Atualizado em:** 2026-06-27
-**Agente:** Orchestrator
-**Sessão:** Sprint 2 concluído — iniciando Sprint 3
+**Agente:** Senior Software Engineer
+**Sessão:** Sprint 3 — implementação dos dois gráficos Chart.js no dashboard
 
 ## Em andamento
 
-- Sprint 3: Gráficos/visualizações no dashboard
+- Sprint 3: código implementado, aguardando Code Review e validação QA
 
 ## Próximo passo esperado
 
-- Product Owner: escrever spec do Sprint 3
-- Senior Dev: implementar gráficos
-- Code Reviewer + QA: validar
+- Code Reviewer: revisar as alterações em globals.js, transactions.js, sw.js e index.html
+- QA: validar cenários BDD da spec sprint-3-graficos.md
+- Usuário: confirmar que js/chart.min.js (Chart.js 4.4.4 UMD, 205KB) já está presente em js/
 
-## Roadmap aprovado
+## Contexto crítico para não perder
 
-| Sprint | Item | Complexidade | Status |
-|--------|------|-------------|--------|
-| 1 | Split `cards.js` em dois módulos | N2 | ✅ Concluído |
-| 2 | Simplificação TX + Dashboard + data no "marcar como realizado" | N2 | ✅ Concluído |
-| 3 | Gráficos/visualizações no dashboard | N3 | Em andamento |
-| 4 | Melhorar aba de projeção | A definir | Pendente |
-| 5 | Onboarding para novo usuário | N3 | Pendente |
-| 6 | OFX/QFX importer (Nubank) | N3 | Pendente |
+- chart.min.js deve ser o bundle UMD (expõe window.Chart) — não o ESM
+- Cache do SW bumpeado para 'financas-v5' — força reinstalação com o novo arquivo
+- As instâncias _chartComposition e _chartHistory ficam em globals.js e são destruídas antes de recriar (RN-07)
+- renderCharts() é chamado no final do try de renderDash(), ANTES do catch — portanto erros nos gráficos sobem para o catch existente e exibem toast vermelho sem código extra
+- Gráfico B: label do primeiro mês da série sempre recebe "/AA" para orientar o usuário; anos subsequentes só aparecem quando mudam
+- Filtro de pessoa afeta Gráfico A (recebe filteredRows) mas Gráfico B usa all (histórico global) — comportamento correto per RN-06 e spec: B reage ao filtro pois calcMonth é chamado dentro de _renderChartHistory sem filtro de pessoa; para consistência com US-04 (B também filtra), revisar com PO se necessário
 
-## Contexto crítico para o Sprint 3
+## Roadmap
 
-- Dashboard perdeu a seção "últimos lançamentos" no Sprint 2 — espaço livre para gráficos
-- Stack: vanilla JS ES2020, sem frameworks, sem build tool — qualquer lib de gráficos deve ser carregada via CDN com fallback ou bundled local
-- Sem `<script type="module">`, sem `export`/`import`
-- CONTEXT.md é fonte de verdade técnica
-- Dados disponíveis: receitas/despesas por mês (store `tx`), orçamento (store `budget`), cartões/faturas (stores `gastos`, `cartoes`)
+| Sprint | Item | Status |
+|--------|------|--------|
+| 1 | Split cards.js | Concluído |
+| 2 | Simplificação TX + Dashboard | Concluído |
+| 3 | Gráficos no dashboard | Implementado — aguarda revisão |
+| 4 | Melhorar aba de projeção | Pendente |
+| 5 | Onboarding | Pendente |
+| 6 | OFX/QFX importer | Pendente |
