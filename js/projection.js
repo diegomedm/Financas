@@ -50,6 +50,12 @@ async function renderProj(){
   var all=await dbAll();
   var budgets=await budgetAll();
   var allDone=await _budgetDoneAll();
+  /* Carregar dados para calcCategoriaRealizado (uma vez só) */
+  var _projGastos=[];var _projCartoes=[];
+  try{_projGastos=await gastosAll();}catch(e){}
+  try{_projCartoes=await cartoesAll();}catch(e){}
+  /* Isolar categorias puras */
+  var categoriaItems=budgets.filter(function(b){return b.isCategoriaOnly&&b.categoriaKey;});
 
   /* Filtrar TX por pessoa */
   var txFiltered=pessoaFilter
@@ -57,9 +63,10 @@ async function renderProj(){
     :all;
 
   /* Filtrar itens de budget por pessoa — exclui itens sem pessoaId quando filtro ativo */
+  /* Excluir também categorias puras (entram separado via saldo restante) */
   var budgetsFiltered=pessoaFilter
-    ?budgets.filter(function(item){return item.pessoaId===pessoaFilter;})
-    :budgets;
+    ?budgets.filter(function(item){return item.pessoaId===pessoaFilter&&!item.isCategoriaOnly;})
+    :budgets.filter(function(item){return !item.isCategoriaOnly;});
 
   /* Construir Set de IDs realizados por mes: doneKey => budgetId_YYYYMM */
   var doneKeySet=new Set(allDone.map(function(d){return d.key;}));
@@ -108,6 +115,26 @@ async function renderProj(){
       var ckey=citem.id+'_'+y+mm; /* ex: cartao_3_202607 */
       if(doneKeySet.has(ckey))continue; /* fatura ja foi marcada como realizada — TX credit ja contabilizada acima */
       expense+=citem.value||0;
+    }
+
+    /* Somar saldo restante das categorias orçadas (mês atual e futuros apenas) */
+    var refM=parseInt(localStorage.getItem('refMonth'));var refY=parseInt(localStorage.getItem('refYear'));
+    if(isNaN(refM)||isNaN(refY)){var _n=new Date();refM=_n.getMonth();refY=_n.getFullYear();}
+    var absMes=y*12+m;var absRef=refY*12+refM;
+    if(absMes>=absRef){
+      for(var ci2=0;ci2<categoriaItems.length;ci2++){
+        var cat=categoriaItems[ci2];
+        var orcado=cat.value||0;
+        var realizado=0;
+        if(absMes===absRef){
+          /* Mês atual: calcular realizado para obter saldo restante */
+          realizado=calcCategoriaRealizado(cat.id,_projGastos,all,_projCartoes,m,y);
+        }
+        /* Meses futuros: realizado=0, usa orçado completo */
+        var restante=Math.max(0,orcado-realizado);
+        /* Se realizado > orçado no mês atual, o excesso já está nas faturas — não soma nada */
+        expense+=restante;
+      }
     }
 
     var balance=income-expense;

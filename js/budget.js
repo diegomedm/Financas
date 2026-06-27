@@ -832,8 +832,9 @@ async function renderBudget(){
   try{cartoesRender=await cartoesAll();}catch(e){}
   // Renderizar seção de categorias orçadas
   _renderCategoriasBudget(allBudgetItems, todosGastosRender, todasTxRender, cartoesRender);
-  // Filter manual items by recurrence logic
+  // Filter manual items by recurrence logic (excluir categorias puras da lista)
   const manualItemsBeforePessoa=allBudgetItems.filter(item=>{
+    if(item.isCategoriaOnly)return false;
     const rec=item.recurrence||'always';
     if(rec==='always'){
       if(item.delayedSkipMonths?.some(s=>s.month===curMonth&&s.year===curYear))return false;
@@ -897,20 +898,34 @@ async function renderBudget(){
   const totalExpense=expenseItems.reduce((s,i)=>s+i.value,0);
   const doneIncome=incomeItems.filter(i=>doneIds.has(i.id)).reduce((s,i)=>s+i.value,0);
   const doneExpense=expenseItems.filter(i=>doneIds.has(i.id)).reduce((s,i)=>s+i.value,0);
+  /* Somar saldo restante das categorias ao total de despesas do resumo */
+  /* Só aplica no mês atual (>= refMonth): mesma lógica da projeção */
+  var _refMB=parseInt(localStorage.getItem('refMonth'));var _refYB=parseInt(localStorage.getItem('refYear'));
+  if(isNaN(_refMB)||isNaN(_refYB)){var _nb=new Date();_refMB=_nb.getMonth();_refYB=_nb.getFullYear();}
+  var _catExpense=0;var _catRealizado=0;
+  if(curYear*12+curMonth>=_refYB*12+_refMB){
+    var _catItems=allBudgetItems.filter(function(b){return b.isCategoriaOnly&&b.categoriaKey;});
+    for(var _ci=0;_ci<_catItems.length;_ci++){
+      var _cat=_catItems[_ci];
+      var _realizado=calcCategoriaRealizado(_cat.id,todosGastosRender,todasTxRender,cartoesRender,curMonth,curYear);
+      _catRealizado+=_realizado;
+      _catExpense+=Math.max(0,(_cat.value||0)-_realizado);
+    }
+  }
   const doneCount=doneIds.size;
   const pctAll=items.length>0?Math.round(doneCount/items.length*100):0;
   document.getElementById('budget-summary-card').style.display='block';
   document.getElementById('budget-progress-fill').style.width=pctAll+'%';
   document.getElementById('budget-progress-fill').style.background=pctAll<50?'var(--amber)':pctAll<100?'var(--blue)':'var(--green)';
-  const doneSaldo=doneIncome-doneExpense;
-  const totalSaldo=totalIncome-totalExpense;
+  const doneSaldo=doneIncome-(doneExpense+_catRealizado);
+  const totalSaldo=totalIncome-(totalExpense+_catRealizado+_catExpense);
   const saldoColor=doneSaldo>=0?'var(--green)':'var(--red)';
   const totalSaldoColor=totalSaldo>=0?'var(--green)':'var(--red)';
   document.getElementById('budget-summary-text').innerHTML=
     `<div class="budget-summary-col">
       <span style="color:var(--text2)">${doneCount}/${items.length} realizados</span>
       <span style="color:var(--green)">💵 ${fmt(doneIncome)} <span style="color:var(--text3)">/ ${fmt(totalIncome)}</span></span>
-      <span style="color:var(--red)">📤 ${fmt(doneExpense)} <span style="color:var(--text3)">/ ${fmt(totalExpense)}</span></span>
+      <span style="color:var(--red)">📤 ${fmt(doneExpense+_catRealizado)} <span style="color:var(--text3)">/ ${fmt(totalExpense+_catRealizado+_catExpense)}</span></span>
       <span style="color:${saldoColor}">⚖️ ${doneSaldo>=0?'+':'-'}${fmt(Math.abs(doneSaldo))} <span style="color:${totalSaldoColor}">/ ${totalSaldo>=0?'+':'-'}${fmt(Math.abs(totalSaldo))}</span></span>
     </div>`;
   const sorted=[...enrichedItems].sort((a,b)=>{
