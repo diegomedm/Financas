@@ -76,7 +76,7 @@ function updateMonthLabels(){
   if(ml)ml.textContent=MONTHS[curMonth]+' de '+curYear;
   // Botão de pin: visível apenas quando mês navegado != mês de referência
   document.querySelectorAll('.set-ref-btn').forEach(function(btn){
-    btn.style.display=isCurrentRef()?'none':'inline-flex';
+    btn.style.visibility=isCurrentRef()?'hidden':'visible';
   });
 }
 
