@@ -17,6 +17,16 @@
 ---
 
 ---
+**2026-06-27 — Sprint 2 — CONCLUÍDO**
+- Feito: 3 mudanças implementadas, revisadas e validadas — push realizado
+- 2a: Form TX simplificado (removido `fixed`, `area-recur`, `area-parcela`, repeat em subitems)
+- 2b: Dashboard removeu seção "últimos lançamentos" (`recent-list`)
+- 2c: Budget "marcar como realizado" agora tem campo de data pré-preenchido com hoje
+- Fix extra: `showConfirm` corrigido de `textContent` para `innerHTML` (bug descoberto no teste manual)
+- Débitos: DT-006 registrado (`invalidateCache` ausente em `delOne` — pré-existente)
+- Artefatos: `js/transactions.js`, `js/budget.js`, `index.html`, `js/utils.js`
+---
+---
 **2026-06-26 — Sprint 1 — CONCLUÍDO + Sprint 2 iniciado**
 - Feito: Verificação Playwright automatizada do Sprint 1 — 12/12 checks PASS
 - Feito: Push para GitHub realizado pelo usuário — deploy no GitHub Pages
