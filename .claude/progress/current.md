@@ -1,26 +1,30 @@
 # Estado Atual do Projeto
 
 **Atualizado em:** 2026-06-27
-**Agente:** QA Engineer
-**Sessão:** Verificação estática completa da Sprint 5 — veredicto LIBERADO
+**Agente:** Senior Dev
+**Sessão:** Pós-Sprint 5 — melhorias de UX e lógica de categorias orçadas na projeção/resumo
 
 ## O que está em andamento
 
-- Verificação estática concluída: todos os 12 itens do checklist passaram (com uma observação menor sobre JSON.stringify legado em cards-render.js linha 158 — pré-existente, não introduzido pela Sprint 5)
-- Smoke test manual pendente: o usuário deve executar os 8 cenários no browser antes do commit
+- Sprint 5 entregue e em produção (main)
+- Implementadas melhorias pós-sprint:
+  - Botão 📌 (mês de referência) em todas as 5 abas, dentro do month-nav, com visibility:hidden para não deslocar layout
+  - Categorias orçadas (`isCategoriaOnly`) ocultas da lista normal de orçamento
+  - Saldo restante das categorias (orçado - realizado) entra na projeção a partir do refMonth
+  - Resumo de orçamento: realizado e total de despesas incluem contribuição das categorias
+  - SW v10
 
 ## Próximo passo esperado
 
-- Usuário executa o plano de smoke test manual (ST-01 a ST-08) no browser
-- Após aprovação de todos os cenários: commit e archive da spec `sprint-5-categorias-budget.md`
+- Esclarecer item 1 do roadmap (TX avulsas com categoria — comportamento já implementado, usuário quer entender melhor com exemplo prático)
+- Itens pendentes do roadmap: OFX/QFX importer (4), Onboarding (5)
+- Gráficos do dashboard (3) — verificar se já foi implementado em sessão anterior
 
 ## Contexto crítico para não perder
 
-- JSON.stringify em cards-render.js linha 158 é código legado (existia antes da Sprint 5) com mitigação .replace aplicada — não é bloqueante
-- calcCategoriaRealizado é função síncrona pura (recebe arrays, não chama stores internamente) — conforme especificado
-- renderBudget carrega gastosAll/dbAll/cartoesAll UMA VEZ antes do loop — conforme especificado
-- getCartaoBudgetItems não contém mais referências a catGlobalTotals ou allCatsProj — delta removido
-- #cg-categoria em cards-modal.js lê de budgetAll() — conforme especificado
-- #f-categoria existe em transactions.js — conforme especificado
-- saveBudgetItem e saveBudgetEdit incluem categoriaKey em todos os paths (mais de 15 ocorrências verificadas)
-- node --check passou em exit 0 nos 4 arquivos JS
+- `isCategoriaOnly:true` + `categoriaKey` identifica uma categoria pura — não aparece na lista de orçamento, aparece só na seção "Categorias Orçadas"
+- `calcCategoriaRealizado(id, gastos[], tx[], cartoes[], month, year)` — função síncrona pura, recebe arrays
+- Projeção e resumo de orçamento: saldo restante = max(0, orçado - realizado); meses < refMonth ignorados
+- `refMonth/refYear` em localStorage — mês de referência persistido; `curMonth/curYear` inicializam a partir dele
+- SW cache: `financas-v10`
+- Restrições técnicas obrigatórias: sem export/import, sem script type=module, sem nested template literals, sem JSON.stringify em onclick, node --check após todo JS

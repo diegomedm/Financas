@@ -4,6 +4,14 @@
 
 ---
 
+**2026-06-27 — Senior Dev**
+- Feito: Melhorias pós-Sprint 5 — botão 📌 em todas as 5 abas (visibility:hidden no month-nav); categorias ocultas da lista de orçamento (isCategoriaOnly filter); saldo restante de categorias na projeção (refMonth em diante); resumo de orçamento atualizado com realizado e total das categorias; SW v10
+- Decisões: saldo restante = max(0, orçado - realizado); meses < refMonth ignorados na projeção; realizado das categorias entra no X do resumo, restante entra no Y
+- Artefatos: index.html, js/app.js, js/budget.js, js/projection.js, sw.js — commitados e em produção (main)
+- Pendências: esclarecer comportamento de TX avulsas com categoria para usuário; OFX/QFX importer e Onboarding pendentes
+
+---
+
 **2026-06-27 — QA Engineer**
 - Feito: Verificação estática completa da Sprint 5 — 12 itens do checklist analisados
 - Decisões: VEREDICTO ESTÁTICO: LIBERADO. Nenhum bloqueante. JSON.stringify em cards-render.js linha 158 é legado pré-Sprint 5, com mitigação .replace, não introduzido nesta entrega.
