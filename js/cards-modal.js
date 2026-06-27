@@ -195,6 +195,10 @@ function showAddGastoModal(cartaoId, cartao, gasto=null){
       <textarea id="cg-obs" placeholder="Detalhes...">${isEdit?gasto.obs||'':''}</textarea>
     </div>
     <div class="form-group">
+      <label>Categoria <span class="label-muted">(opcional)</span></label>
+      <select id="cg-categoria"></select>
+    </div>
+    <div class="form-group">
       <label>Subitens <span class="label-muted">(opcional)</span></label>
       <div id="cg-subitems-area"></div>
       <button type="button" onclick="addGastoSubitem()" class="btn-subitem-add">+ subitem</button>
@@ -206,6 +210,19 @@ function showAddGastoModal(cartaoId, cartao, gasto=null){
     </div>`);
   setTimeout(()=>{
     updateFaturaPreview(cartao);
+    // Popular select de categoria
+    categoriasCartaoAll().then(function(cats){
+      var sel=document.getElementById('cg-categoria');
+      if(!sel)return;
+      var opts='<option value="">— Sem categoria —</option>';
+      var sorted=cats.slice().sort(function(a,b){return(a.name||'').localeCompare(b.name||'');});
+      for(var ci=0;ci<sorted.length;ci++){
+        var cat=sorted[ci];
+        var sel2=isEdit&&gasto&&gasto.categoriaId===cat.id?'selected':'';
+        opts+='<option value="'+cat.id+'" '+sel2+'>'+cat.name+'</option>';
+      }
+      sel.innerHTML=opts;
+    }).catch(function(){});
     if(isEdit&&gasto.rawExpr){
       const inp=document.getElementById('cg-val');
       if(inp){
@@ -415,6 +432,7 @@ async function saveGasto(){
     const date=document.getElementById('cg-date')?.value||todayISO();
     const obs=document.getElementById('cg-obs')?.value.trim()||'';
     const cartaoId=parseInt(document.getElementById('cg-cartao-id')?.value);
+    const categoriaId=parseInt(document.getElementById('cg-categoria')?.value)||null;
     if(!name){setFieldError('cg-name','Informe o nome');return}
   if(!val||isNaN(val)||val<=0){setFieldError('cg-val','Informe um valor válido');return;}
     const cgRawExpr=(()=>{const inp=document.getElementById('cg-val');return inp?.dataset?.rawExpr||(hasOp(inp?.value||'')?inp.value:null);})();
@@ -429,7 +447,7 @@ async function saveGasto(){
       const groupId=Date.now()+'_'+Math.random().toString(36).slice(2,7);
       for(let i=pnum-1;i<ptotal;i++){
         const label=name+' '+(i+1)+'/'+ptotal;
-        await gastosAdd({name:label,value:val,rawExpr:cgRawExpr,date:d,obs,cartaoId,
+        await gastosAdd({name:label,value:val,rawExpr:cgRawExpr,date:d,obs,cartaoId,categoriaId,
           parcela:i+1,totalParcelas:ptotal,groupId,createdAt:Date.now()});
         const nd=addMonths(d,1);if(nd)d=nd;
       }
@@ -440,7 +458,7 @@ async function saveGasto(){
       const fatM=getFaturaMonth(date,cartaoObj);
       const srs=hasSubRep&&fatM?{month:fatM.month,year:fatM.year}:null;
       const gval=gsubs.length?gsubs.reduce((t,s)=>t+s.value,0):val;
-      await gastosAdd({name,value:gval,rawExpr:cgRawExpr,date,obs,cartaoId,
+      await gastosAdd({name,value:gval,rawExpr:cgRawExpr,date,obs,cartaoId,categoriaId,
         subitems:gsubs.length?gsubs:undefined,
         subRepeatStart:srs||undefined,
         createdAt:Date.now()});
@@ -467,6 +485,7 @@ async function saveGastoEdit(id){
     const parcelado=document.getElementById('cg-parcela-toggle')?.checked;
     const pnum=parseInt(document.getElementById('cg-pnum')?.value)||1;
     const ptotal=parseInt(document.getElementById('cg-ptotal')?.value)||1;
+    const categoriaId=parseInt(document.getElementById('cg-categoria')?.value)||null;
     const all=await gastosAll();
     const existing=all.find(g=>g.id===id);
     if(!existing)return;
@@ -480,7 +499,7 @@ async function saveGastoEdit(id){
         closeModal();
         showConfirm('Editar gasto parcelado','Este gasto faz parte de uma série de parcelas.',[
           {label:'Apenas esta parcela',cls:'btn-ghost',action:async()=>{
-            await gastosPut({...existing,name,value:val,rawExpr:cgRawExpr,date,obs,
+            await gastosPut({...existing,name,value:val,rawExpr:cgRawExpr,date,obs,categoriaId,
               parcela:parcelado?pnum:existing.parcela,
               totalParcelas:parcelado?ptotal:existing.totalParcelas});
             toast('Parcela atualizada!');renderCards();refreshBudgetCartoes();
@@ -498,7 +517,7 @@ async function saveGastoEdit(id){
             let d=date;
             for(let i=0;i<remaining;i++){
               const label=baseName+' '+(startParcela+i)+'/'+(newTotal||remaining);
-              await gastosAdd({name:label,value:val,rawExpr:cgRawExpr,date:d,obs,
+              await gastosAdd({name:label,value:val,rawExpr:cgRawExpr,date:d,obs,categoriaId,
                 cartaoId:existing.cartaoId,parcela:startParcela+i,
                 totalParcelas:newTotal||remaining,groupId:newGroupId,createdAt:Date.now()});
               const nd=addMonths(d,1);if(nd)d=nd;
@@ -553,7 +572,7 @@ async function saveGastoEdit(id){
     })();
     const activeNow=srs2?getActiveSubitems(finalGsubs,srs2.month,srs2.year,curMonth,curYear):finalGsubs;
     const gval2=activeNow.length?activeNow.reduce((t,s)=>t+s.value,0):val;
-    await gastosPut({...existing,name,value:gval2,rawExpr:cgRawExpr,date,obs,
+    await gastosPut({...existing,name,value:gval2,rawExpr:cgRawExpr,date,obs,categoriaId,
       subitems:finalGsubs.length?finalGsubs:undefined,
       subRepeatStart:srs2||existing.subRepeatStart||undefined,
       parcela:parcelado?pnum:existing.parcela||null,
@@ -625,6 +644,118 @@ async function editCartao(cartaoId){
   }catch(e){
     console.error('[editCartao]',e);
     toast('Erro ao abrir cartão','var(--red)');
+  }
+}
+
+/* ── CATEGORIAS CARTAO ── */
+
+function showAddCategoriaModal(){
+  openModal(
+    '<div class="modal-title">Nova Categoria</div>'+
+    '<div class="form-group">'+
+    '<label>Nome</label>'+
+    '<input id="cat-name" placeholder="Ex: Gasolina, Mercado..." oninput="clearFieldError(\'cat-name\')">'+
+    '<div class="field-error-msg" id="cat-name-err"></div>'+
+    '</div>'+
+    '<div class="form-group">'+
+    '<label>Valor Orçado Mensal</label>'+
+    '<input id="cat-valor" type="text" inputmode="decimal" placeholder="0,00" oninput="clearFieldError(\'cat-valor\')">'+
+    '<div class="field-error-msg" id="cat-valor-err"></div>'+
+    '</div>'+
+    '<div class="btn-row" style="margin-top:4px">'+
+    '<button class="btn btn-primary" style="flex:1" onclick="">Salvar</button>'+
+    '<button class="btn btn-ghost" style="flex:1" onclick="closeModal()">Cancelar</button>'+
+    '</div>'
+  );
+  setTimeout(function(){
+    var saveBtn=document.querySelector('#modal-content .btn-primary');
+    if(saveBtn)saveBtn.onclick=saveCategoria;
+    var inp=document.getElementById('cat-name');
+    if(inp)inp.focus();
+  },50);
+}
+
+function showEditCategoriaModal(id){
+  categoriasCartaoAll().then(function(cats){
+    var cat=cats.find(function(c){return c.id===id;});
+    if(!cat)return;
+    openModal(
+      '<div class="modal-title">Editar Categoria</div>'+
+      '<div class="form-group">'+
+      '<label>Nome</label>'+
+      '<input id="cat-name" placeholder="Ex: Gasolina, Mercado..." value="'+cat.name.replace(/"/g,'&quot;')+'" oninput="clearFieldError(\'cat-name\')">'+
+      '<div class="field-error-msg" id="cat-name-err"></div>'+
+      '</div>'+
+      '<div class="form-group">'+
+      '<label>Valor Orçado Mensal</label>'+
+      '<input id="cat-valor" type="text" inputmode="decimal" placeholder="0,00" value="'+cat.valorOrcado+'" oninput="clearFieldError(\'cat-valor\')">'+
+      '<div class="field-error-msg" id="cat-valor-err"></div>'+
+      '</div>'+
+      '<div class="btn-row" style="margin-top:4px">'+
+      '<button class="btn btn-primary" style="flex:1" onclick="">Salvar</button>'+
+      '<button class="btn btn-ghost" style="flex:1" onclick="closeModal()">Cancelar</button>'+
+      '</div>'
+    );
+    setTimeout(function(){
+      var saveBtn=document.querySelector('#modal-content .btn-primary');
+      if(saveBtn)saveBtn.onclick=function(){saveEditCategoria(id);};
+    },50);
+  }).catch(function(e){
+    console.error('[showEditCategoriaModal]',e);
+    toast('Erro ao abrir categoria','var(--red)');
+  });
+}
+
+async function saveCategoria(){
+  try{
+    var name=document.getElementById('cat-name')?.value.trim();
+    var valorRaw=(document.getElementById('cat-valor')?.value||'').replace(',','.');
+    var valorOrcado=parseFloat(valorRaw);
+    if(!name){setFieldError('cat-name','Informe o nome');return;}
+    if(isNaN(valorOrcado)||valorOrcado<=0){setFieldError('cat-valor','Informe um valor válido (maior que zero)');return;}
+    await categoriasCartaoAdd({name,valorOrcado,createdAt:Date.now()});
+    toast('Categoria adicionada!','var(--teal)');
+    closeModal();
+    renderCards();
+  }catch(e){
+    console.error('[saveCategoria]',e);
+    toast('Erro ao salvar categoria','var(--red)');
+  }
+}
+
+async function saveEditCategoria(id){
+  try{
+    var name=document.getElementById('cat-name')?.value.trim();
+    var valorRaw=(document.getElementById('cat-valor')?.value||'').replace(',','.');
+    var valorOrcado=parseFloat(valorRaw);
+    if(!name){setFieldError('cat-name','Informe o nome');return;}
+    if(isNaN(valorOrcado)||valorOrcado<=0){setFieldError('cat-valor','Informe um valor válido (maior que zero)');return;}
+    var cats=await categoriasCartaoAll();
+    var existing=cats.find(function(c){return c.id===id;});
+    if(!existing)return;
+    await categoriasCartaoPut({...existing,name,valorOrcado});
+    toast('Categoria atualizada!','var(--teal)');
+    closeModal();
+    renderCards();
+  }catch(e){
+    console.error('[saveEditCategoria]',e);
+    toast('Erro ao salvar categoria','var(--red)');
+  }
+}
+
+async function deleteCategoria(id){
+  try{
+    showConfirm('Remover categoria','Gastos vinculados a esta categoria perderão a referência, mas não serão excluídos.',[
+      {label:'Remover',cls:'btn-danger',action:async function(){
+        await categoriasCartaoDel(id);
+        toast('Categoria removida','var(--red)');
+        renderCards();
+      }},
+      {label:'Cancelar',cls:'btn-ghost',action:function(){}}
+    ]);
+  }catch(e){
+    console.error('[deleteCategoria]',e);
+    toast('Erro ao remover categoria','var(--red)');
   }
 }
 
@@ -713,16 +844,13 @@ async function saveRecorrente(){
   }
 }
 async function saveRecorrenteEdit(id){
-
   try{
-    if(!name){setFieldError('cr-name','Informe o nome');return;}
-    if(value<=0){setFieldError('cr-val','Informe um valor válido');return;}
     const name=document.getElementById('cr-name')?.value.trim();
     const subitems=getCrSubitems();
     const value=subitems.length?subitems.reduce((t,s)=>t+s.value,0):parseFloat(document.getElementById('cr-val')?.value)||0;
     const obs=document.getElementById('cr-obs')?.value.trim()||'';
     if(!name){setFieldError('cr-name','Informe o nome');return;}
-  if(value<=0){setFieldError('cr-val','Informe um valor válido');return;}
+    if(value<=0){setFieldError('cr-val','Informe um valor válido');return;}
     const all=await recorrentesAll();
     const existing=all.find(r=>r.id===id);
     if(!existing)return;
