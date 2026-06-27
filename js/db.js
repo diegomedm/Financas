@@ -32,6 +32,10 @@ function openDB(){
         d.createObjectStore('categoriasCartao',{keyPath:'id',autoIncrement:true});
       }
     };
+    r.onblocked=()=>{
+      // outra aba ainda tem o banco aberto na versão anterior — aguarda
+      console.warn('[openDB] upgrade bloqueado por outra conexão. Feche outras abas do app.');
+    };
     r.onsuccess=e=>res(e.target.result);
     r.onerror=()=>rej(r.error);
   });

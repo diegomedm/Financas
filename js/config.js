@@ -185,6 +185,8 @@ async function clearAll(){
 
 async function forceRefresh(){
   try{
+    // fecha conexão IndexedDB atual para liberar upgrade bloqueado em outras abas
+    if(typeof db!=='undefined'&&db&&db.close)db.close();
     if('serviceWorker' in navigator){
       const regs=await navigator.serviceWorker.getRegistrations();
       for(const reg of regs)await reg.unregister();
@@ -193,9 +195,11 @@ async function forceRefresh(){
       const keys=await caches.keys();
       for(const k of keys)await caches.delete(k);
     }
-    window.location.reload(true);
   }catch(e){
-    window.location.reload(true);
+    console.warn('[forceRefresh]',e);
+  }finally{
+    // usa location.href para forçar reload mesmo dentro de iframe (Live Preview)
+    window.location.href=window.location.href.split('?')[0]+'?_r='+Date.now();
   }
 }
 
