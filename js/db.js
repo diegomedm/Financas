@@ -1,7 +1,7 @@
 /* ── DB ── */
 function openDB(){
   return new Promise((res,rej)=>{
-    const r=indexedDB.open('financas_pwa_v2',5);
+    const r=indexedDB.open('financas_pwa_v2',6);
     r.onupgradeneeded=e=>{
       const d=e.target.result;
       if(!d.objectStoreNames.contains('tx')){
@@ -27,6 +27,9 @@ function openDB(){
       if(!d.objectStoreNames.contains('recorrentes')){
         const rc=d.createObjectStore('recorrentes',{keyPath:'id',autoIncrement:true});
         rc.createIndex('cartaoId','cartaoId');
+      }
+      if(!d.objectStoreNames.contains('categoriasCartao')){
+        d.createObjectStore('categoriasCartao',{keyPath:'id',autoIncrement:true});
       }
     };
     r.onsuccess=e=>res(e.target.result);
@@ -114,3 +117,13 @@ const doneAllForMonth=async(y,m)=>{
   const all=await _budgetDoneAll();
   return all.filter(r=>r.key.endsWith(prefix));
 };
+
+/* ── CATEGORIAS CARTAO ── */
+const categoriasCartaoAll=()=>{
+  if(!db.objectStoreNames.contains('categoriasCartao'))return Promise.resolve([]);
+  const hit=_cacheRead('categoriasCartao');if(hit)return hit;
+  return new Promise(res=>{const t=db.transaction('categoriasCartao','readonly');t.objectStore('categoriasCartao').getAll().onsuccess=e=>res(_cacheWrite('categoriasCartao',e.target.result||[]))});
+};
+const categoriasCartaoAdd=item=>new Promise((res,rej)=>{invalidateCache('categoriasCartao');const t=db.transaction('categoriasCartao','readwrite');const r=t.objectStore('categoriasCartao').add(item);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+const categoriasCartaoPut=item=>new Promise((res,rej)=>{invalidateCache('categoriasCartao');const t=db.transaction('categoriasCartao','readwrite');const r=t.objectStore('categoriasCartao').put(item);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)});
+const categoriasCartaoDel=id=>new Promise(res=>{invalidateCache('categoriasCartao');const t=db.transaction('categoriasCartao','readwrite');t.objectStore('categoriasCartao').delete(id).onsuccess=()=>res()});

@@ -41,6 +41,22 @@
 - **Identificado em:** Code Review Sprint 2 (2026-06-26) — pré-existente, não introduzido pelo sprint
 - **Status:** Não corrigido
 
+### [DT-007] Delta de projeção de categoria ignora pessoaFilter
+- **Arquivo:** `js/cards-render.js` — `getCartaoBudgetItems()` linhas 329–377
+- **Descrição:** O delta de categoria é calculado globalmente (todos os cartões, todas as pessoas) antes do filtro de pessoa aplicado em `renderProj()`. Se o usuário filtrar por pessoa na projeção, o delta pode ser atribuído a um cartão que depois é filtrado fora.
+- **Impacto:** Médio — afeta apenas usuários que usam filtro de pessoa na projeção com categorias cadastradas
+- **Proposta:** Calcular delta já com filtro de pessoa aplicado em `getCartaoBudgetItems`
+- **Identificado em:** Code Review Sprint 4b (2026-06-27)
+- **Status:** Não corrigido
+
+### [DT-008] Ordenação da seção "Por Categoria" por ordem de inserção
+- **Arquivo:** `js/cards-render.js` — seção Por Categoria
+- **Descrição:** Categorias exibidas na ordem de `Object.keys(catTotals)` (ordem de inserção dos gastos), não alfabética
+- **Impacto:** Baixo — inconsistência visual entre faturas
+- **Proposta:** Adicionar `.sort()` nos catIds antes de iterar
+- **Identificado em:** Code Review Sprint 4b (2026-06-27)
+- **Status:** Não corrigido
+
 ### [DT-004] projection.js muito simples (36 linhas)
 - **Impacto:** Baixo — projeção não considera budget nem cartões, apenas TX passados
 - **Proposta:** Enriquecer com dados de orçamento para projeção mais precisa

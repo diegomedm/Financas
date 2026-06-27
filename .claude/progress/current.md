@@ -1,24 +1,41 @@
 # Estado Atual do Projeto
 
 **Atualizado em:** 2026-06-27
-**Agente:** QA Engineer
-**Sessão:** Sprint 4 — verificação estática e plano de testes QA
+**Agente:** Senior Software Engineer
+**Sessão:** Sprint 4b — categorias orçadas de cartão — implementação e correção de bugs
 
 ## Em andamento
 
-- Sprint 4: verificação estática concluída (LIBERADO), plano de testes manuais elaborado (24 CTs)
-- Aguardando execução dos testes manuais pelo usuário ou Test Runner
+- Sprint 4b implementado e em validação manual no browser pelo usuário
+- Erro de carregamento da aba Cartão corrigido (guard `db.objectStoreNames.contains` em `categoriasCartaoAll`)
+- Usuário confirmou que cartões carregam agora — validando funcionalidades
 
 ## Próximo passo esperado
 
-- Executar os 24 casos de teste manuais descritos em `specs/sprint-4-projecao-qa.md`
-- Prioridade: CT-001, CT-009, CT-013, CT-014, CT-022 (críticos) primeiro
-- Após execução: QA consolida veredicto final (aprovado / reprovado com bugs)
+- Usuário testar os pontos principais do Sprint 4b:
+  1. Criar/editar/excluir categoria na seção "Categorias Orçadas"
+  2. Vincular gasto a categoria no modal de gasto
+  3. Seção "Por Categoria" na fatura (realizado vs orçado + barra)
+  4. Projeção considera delta de categoria
+  5. Editar recorrente (fix do bug pré-existente confirmado)
+- Após validação: commitar e seguir para Sprint 5 (onboarding)
 
 ## Contexto crítico para não perder
 
-- Nested template literals em `pessoas.js` linhas 55 e 60 são pré-existentes — nao introduzidos pelo Sprint 4
-- Formato da chave budgetDone em projection.js: `item.id+'_'+y+mm` (mm = m+1 padStart 2) — consistente com db.js
-- CT-009 e CT-012 cobrem o risco de dupla contagem (maior risco técnico desta sprint)
-- CT-016 cobre o caso de budget sem pessoaId com filtro ativo (deve excluir — consistente com renderBudget)
-- `_syncProjTabActive()` garante sincronização do botão ativo após restauração do localStorage — validar via CT-001/CT-002
+- Guard adicionada em `categoriasCartaoAll()` em `db.js`: se store não existe (banco ainda em v5), retorna `[]` sem lançar exceção — garante retrocompatibilidade enquanto SW não atualiza
+- SW bumpeado para v7 no commit anterior (1736244) — força recarga do db.js novo
+- IndexedDB versão 6 cria store `categoriasCartao` no upgrade
+- `saveRecorrenteEdit` bug pré-existente (DT-005) corrigido nesta sprint — declarações agora antes das validações
+- JSON.stringify em onclick linha 175 de cards-render.js é pré-existente — documentado e aceito
+
+## Roadmap
+
+| Sprint | Item | Status |
+|--------|------|--------|
+| 1 | Split cards.js | Concluído |
+| 2 | Simplificação TX + Dashboard | Concluído |
+| 3 | Gráficos no dashboard | Concluído |
+| 4 | Melhorias na projeção | Concluído |
+| 4b | Categorias orçadas de cartão | Em validação |
+| 5 | Onboarding | Pendente |
+| 6 | OFX/QFX importer | Pendente |

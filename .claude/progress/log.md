@@ -3,6 +3,47 @@
 > Arquivo append-only. Nunca editar entradas existentes. Sempre adicionar no topo.
 
 ---
+**2026-06-27 — Senior Software Engineer**
+- Feito: Sprint 4b implementado — categorias orçadas de cartão (store categoriasCartao, CRUD modal, select no gasto, seção Por Categoria na fatura, delta na projeção)
+- Feito: Fix bug bloqueante saveRecorrenteEdit (DT-005) — declarações movidas antes das validações
+- Feito: Fix erro de carregamento da aba Cartão — guard db.objectStoreNames.contains em categoriasCartaoAll() para retrocompatibilidade com banco v5
+- Feito: SW bumpeado para v7 para forçar recarga dos arquivos
+- Decisões: guard de store em db.js como solução de retrocompatibilidade enquanto SW antigo ainda serve arquivos em cache
+- Artefatos: js/db.js, js/cards-modal.js, js/cards-render.js, index.html, sw.js
+- Pendências: validação manual completa pelo usuário (32 CTs em sprint-4b-categorias-cartao-qa.md)
+---
+**2026-06-27 — QA Engineer**
+- Feito: Verificação estática completa do Sprint 4b (db.js, cards-modal.js, cards-render.js, index.html) — 12/12 checks passaram; node --check exit 0 nos 3 JS; CRLF zerado confirmado; categoriaId antes do groupId confirmado; JSON.stringify apenas na linha pré-existente 175; guard !contains em todas as 8 stores; #categorias-cartao-section no index.html
+- Feito: Plano de 32 casos de teste manuais cobrindo CA-01 a CA-07 (7 blocos) + RN-006
+- Decisões: sort de gastos na fatura (linha 202) produz ordem crescente — não bloqueante pois pré-existente; registrado para débito técnico; veredicto estático = LIBERADO para testes manuais
+- Artefatos: `.claude/specs/sprint-4b-categorias-cartao-qa.md` (criado), `.claude/progress/current.md` (atualizado)
+- Pendências: execução dos 32 CTs pelo usuário; veredicto final QA após execução; CT-029-031 requerem backup G:\Meu Drive\financas_backup_20260626.json
+---
+**2026-06-27 — Senior Software Engineer**
+- Feito: Implementação completa da spec sprint-4b-categorias-cartao.md
+- Decisões: IIFE síncrona dentro do template literal para seção "Por Categoria" (sem nested backtick); `cats` carregado UMA VEZ no início de `renderCards()` e reutilizado em toda a função; delta de projeção iterando `allGastos` diretamente (sem nova query async) para calcular `catGlobalTotals`
+- Artefatos: `js/db.js` (bump 5→6, store categoriasCartao, 4 CRUD), `js/cards-modal.js` (modal categoria, select no modal gasto, categoriaId em saveGasto/saveGastoEdit), `js/cards-render.js` (seção gerenciamento topo, seção "Por Categoria" na fatura, delta getCartaoBudgetItems), `index.html` (container #categorias-cartao-section)
+- Pendências: node --check passou exit 0 em todos os 3 JS; Code Reviewer e QA pendentes; teste de upgrade IndexedDB com backup real pendente
+
+---
+**2026-06-27 — Product Owner**
+- Feito: Leitura de cards-modal.js, cards-render.js, db.js e plan-sprint4b-categorias.md para embasar spec
+- Feito: Criação de `.claude/specs/sprint-4b-categorias-cartao.md` — spec completa com 7 blocos de CAs (CA-01 a CA-07) em BDD, 11 RNs, tabela de arquivos a modificar, DoD e 6 riscos documentados
+- Decisões: seção de gerenciamento de categorias no topo da aba Cartão (fora do loop de cartões); lista de gastos mantém todos os itens + seção adicional "Por Categoria"; delta de projeção global (uma vez por categoria, não por cartão); `categoriaId` orphan tratado como null; select populado no setTimeout existente; onclick do modal via setTimeout seguindo padrão de showAddRecorrenteModal; risco crítico documentado sobre saveGastoEdit parcelado precisar capturar categoriaId antes do bloco groupId
+- Artefatos: `.claude/specs/sprint-4b-categorias-cartao.md` (criado), `.claude/progress/current.md` (atualizado)
+- Pendências: Dev implementar nas 5 fases; testar upgrade IndexedDB com backup real; QA do Sprint 4 ainda pendente de execução
+---
+
+---
+**2026-06-27 — Discovery Agent**
+- Feito: Leitura de db.js, cards-modal.js, cards-render.js, projection.js para entender impacto da feature de categorias orçadas
+- Feito: Elaboração do plano `plan-sprint4b-categorias.md` — N2 MVP, 5 fases, estimativa ~4h45min
+- Decisões: nova store `categoriasCartao` (bump versão IndexedDB 5->6); campo `categoriaId` optional em gastos; delta de projeção calculado em `getCartaoBudgetItems()` sem alterar projection.js; categoria global (não por cartão)
+- Artefatos: `.claude/discovery/plan-sprint4b-categorias.md` (criado), `.claude/progress/current.md` (atualizado)
+- Pendências: aprovação do plano pelo usuário; 3 perguntas em aberto sobre UI antes de iniciar Fase 2 e Fase 4
+---
+
+---
 **2026-06-27 — QA Engineer**
 - Feito: Verificação estática dos 4 arquivos do Sprint 4 (globals.js, projection.js, pessoas.js, index.html) — node --check aprovado nos 3 JS; sem violações de restrições técnicas introduzidas por esta sprint
 - Feito: Elaboração de 24 casos de teste manuais cobrindo todos os 5 CAs da spec (CA-01 a CA-05) + RNs relevantes
