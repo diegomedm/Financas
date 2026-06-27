@@ -4,6 +4,28 @@
 
 ---
 **2026-06-26 — QA Engineer**
+- Feito: Verificações estáticas Sprint 2 — 17/17 checks PASSOU; plano de testes produzido com 23 CTs
+- Decisões: nenhum bloqueante estático encontrado; Sprint 2 liberado para validação manual no browser
+- Artefatos: `.claude/specs/sprint-2-simplificacao-qa.md` (plano completo com CT-001 a CT-023)
+- Pendências: usuário executar checklist manual e reportar resultado por CT para veredicto final do QA
+---
+**2026-06-26 — Senior Software Engineer**
+- Feito: Sprint 2 implementado — 3 mudanças em js/transactions.js, js/budget.js e index.html
+- Decisões: option `fixed` condicional ao isEdit no entryFormHtml; addSubitem diferencia área TX vs Budget pelo ID; onRecurChange removida; enrichedRows removido (era exclusivo do recent-list); _toggleBudgetDoneInternal recebe doneDate como parâmetro; bloco cartao_ inalterado
+- Artefatos: js/transactions.js, js/budget.js, index.html, .claude/progress/current.md
+- Pendências: Code Review + QA validar critérios de aceite da spec sprint-2-simplificacao.md
+---
+
+---
+**2026-06-26 — Sprint 1 — CONCLUÍDO + Sprint 2 iniciado**
+- Feito: Verificação Playwright automatizada do Sprint 1 — 12/12 checks PASS
+- Feito: Push para GitHub realizado pelo usuário — deploy no GitHub Pages
+- Feito: Sprint 2 iniciado (Product Owner acionado)
+- Artefatos: Script Playwright em temp; sprint-1-cards-split-qa.md
+- Pendências: Spec do Sprint 2 (PO), implementação (Dev), review, QA
+---
+---
+**2026-06-26 — QA Engineer**
 - Feito: Plano de testes QA produzido para Sprint 1 — Split de cards.js
 - Verificações estáticas concluídas: CA-11 (PASSOU), CA-12 (PASSOU), CA-14 (PASSOU)
 - Confirmado: node --check exit 0 em ambos os arquivos; sw.js com financas-v4; ordem de scripts correta; sem export/import; JSON.stringify em onclick é pré-existente (linha 915 do cards.js original)

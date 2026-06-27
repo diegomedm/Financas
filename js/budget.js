@@ -590,15 +590,22 @@ async function toggleBudgetDone(budgetId){
   const existing=await doneGet(key);
   if(existing){
     // já marcado — desmarcar sem confirmar
-    return _toggleBudgetDoneInternal(budgetId);
+    return _toggleBudgetDoneInternal(budgetId,'');
   }
-  // vai marcar — pedir confirmação
-  showConfirm('Marcar como realizado?','Será criado um lançamento financeiro referente a este item.',[
-    {label:'Confirmar',cls:'btn-primary',action:()=>_toggleBudgetDoneInternal(budgetId)},
+  // vai marcar — pedir confirmação com campo de data
+  const todayVal=todayISO();
+  const msg='<p>Confirmar a realização deste item?</p>'
+    +'<label style="display:block;margin-top:12px;font-size:0.85rem">Data de realização</label>'
+    +'<input type="date" id="done-date-input" value="'+todayVal+'" style="width:100%;margin-top:4px;padding:6px;border:1px solid var(--border);border-radius:6px;font-size:1rem">';
+  showConfirm('Marcar como realizado?',msg,[
+    {label:'Confirmar',cls:'btn-primary',action:()=>{
+      const doneDate=document.getElementById('done-date-input')?.value||'';
+      _toggleBudgetDoneInternal(budgetId,doneDate);
+    }},
     {label:'Cancelar',cls:'btn-ghost',action:()=>{}}
   ]);
 }
-async function _toggleBudgetDoneInternal(budgetId){
+async function _toggleBudgetDoneInternal(budgetId,doneDate){
 
   try{
     // Handle cartao virtual items (string ids like 'cartao_3')
@@ -663,7 +670,7 @@ async function _toggleBudgetDoneInternal(budgetId){
         name:item.name,value:txVal,rawExpr:item.rawExpr||null,
         subitems:txSubs,type:item.type,
         month:curMonth,year:curYear,ym:ym(curYear,curMonth),
-        date:dateStr,obs:item.obs||'',pessoaId:item.pessoaId||null,
+        date:doneDate!==undefined?doneDate:dateStr,obs:item.obs||'',pessoaId:item.pessoaId||null,
         fromBudget:true,createdAt:Date.now()
       });
       await donePut({key,budgetId:id,txId,doneAt:Date.now()});

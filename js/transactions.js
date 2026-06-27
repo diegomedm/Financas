@@ -27,7 +27,7 @@ function entryFormHtml(t=null){
         <label>Tipo</label>
         <select id="f-type" onchange="onTypeChange()" ${(isEdit&&(t?.fromBudget||t?.fromCartao))?'disabled':''}>
           <option value="income"${defType==='income'?' selected':''}>💵 Receita</option>
-          <option value="fixed"${defType==='fixed'?' selected':''}>🏠 Despesa Fixa</option>
+          ${(isEdit&&t?.type==='fixed')?'<option value="fixed"'+(defType==='fixed'?' selected':'')+'>🏠 Despesa Fixa</option>':''}
           <option value="variable"${defType==='variable'?' selected':''}>🛒 Despesa Variável</option>
           ${(isEdit&&(t?.fromBudget||t?.fromCartao))?'<option value="credit" selected>💳 Fatura cartão</option>':''}
         </select>
@@ -74,27 +74,6 @@ function entryFormHtml(t=null){
     <div class="form-group">
       <label>Observações <span class="label-muted">(opcional)</span></label>
       <textarea id="f-obs" placeholder="Detalhes, itens agrupados...">${defObs}</textarea>
-    </div>
-    <div id="area-recur" style="${(defType==='credit'||(isEdit&&(t?.fromBudget||t?.fromCartao)))?'display:none':''}">
-      <div class="form-group">
-        <label>Repetição</label>
-        <select id="f-recur" onchange="onRecurChange()">
-          <option value="none">Apenas este período</option>
-          <option value="monthly">Mensal — repetir N vezes</option>
-        </select>
-      </div>
-      <div id="area-recur-count" style="display:none" class="form-group">
-        <label>Quantas vezes repetir</label>
-        <input id="f-recur-count" type="text" inputmode="numeric" pattern="[0-9]*" value="12" placeholder="12">
-        <div class="hint">Inclui o período atual</div>
-      </div>
-    </div>
-    <div id="area-parcela" style="display:none">
-      <div class="form-grid">
-        <div class="form-group"><label>Parcela atual</label><input id="f-pnum" type="number" value="1" min="1" inputmode="numeric" oninput="clearFieldError('f-pnum')">
-      <div class="field-error-msg" id="f-pnum-err"></div></div>
-        <div class="form-group"><label>Total de parcelas</label><input id="f-ptotal" type="number" value="1" min="1" inputmode="numeric"></div>
-      </div>
     </div>
     <div class="btn-row" style="margin-top:4px">
       <button class="btn btn-primary" style="flex:1" onclick="${isEdit?`updateEntry(${t.id})`:'saveEntry()'}">${isEdit?'Salvar edição':'Salvar'}</button>
@@ -148,14 +127,7 @@ async function openValNumpad(){
 }
 
 function onTypeChange(){
-  const t=document.getElementById('f-type').value;
-  document.getElementById('area-parcela').style.display='none';
-  document.getElementById('area-recur').style.display=t==='credit'?'none':'block';
-}
-function onRecurChange(){
-  const v=document.getElementById('f-recur')?.value;
-  const el=document.getElementById('area-recur-count');
-  if(el)el.style.display=v==='monthly'?'block':'none';
+  // type change handler mantido para compatibilidade com o select existente
 }
 
 function showAddModal(){openModal(entryFormHtml());setTimeout(()=>renderPessoaChips('f-pessoa-chips',null),50);}
@@ -183,6 +155,7 @@ function showEditModal(id){dbAll().then(all=>{
 function addSubitem(name='',value='',repeat=1,sgid='',skip=[]){
   const area=document.getElementById('modal-b-subitems-area')||document.getElementById('b-subitems-area')||document.getElementById('subitems-area');
   if(!area)return;
+  const isTxArea=area.id==='subitems-area';
   const row=document.createElement('div');
   row.className='subitem-row';
   const hasRepeat=repeat>0;
@@ -190,13 +163,20 @@ function addSubitem(name='',value='',repeat=1,sgid='',skip=[]){
   const sid=hasRepeat?(sgid||Date.now().toString(36)+Math.random().toString(36).slice(2,5)):'';
   if(sid)row.dataset.sgid=sid;
   if(skip&&skip.length)row.dataset.skip=JSON.stringify(skip);
-  row.innerHTML=`
-    <input class="sub-name" placeholder="Nome do subitem" value="${name}">
-    <input class="sub-value" type="number" step="0.01" placeholder="0,00" value="${value}" oninput="updateSubitemsTotal()">
-    <button type="button" class="subitem-repeat${hasRepeat?' active':''}" title="N vezes" onclick="toggleSubitemRepeat(this)">⟳</button>
-    <input class="sub-repeat" type="number" min="1" max="99" placeholder="N" value="${hasRepeat?repeat:''}" oninput="updateSubitemsTotal()" style="${hasRepeat?'':'display:none'}">
-    <button type="button" class="subitem-remove" onclick="removeSubitem(this)">✕</button>
-  `;
+  if(isTxArea){
+    // form de TX: apenas nome e valor, sem repeat
+    row.innerHTML=
+      '<input class="sub-name" placeholder="Nome do subitem" value="'+name+'">'
+      +'<input class="sub-value" type="number" step="0.01" placeholder="0,00" value="'+value+'" oninput="updateSubitemsTotal()">'
+      +'<button type="button" class="subitem-remove" onclick="removeSubitem(this)">✕</button>';
+  }else{
+    row.innerHTML=
+      '<input class="sub-name" placeholder="Nome do subitem" value="'+name+'">'
+      +'<input class="sub-value" type="number" step="0.01" placeholder="0,00" value="'+value+'" oninput="updateSubitemsTotal()">'
+      +'<button type="button" class="subitem-repeat'+(hasRepeat?' active':'')+'" title="N vezes" onclick="toggleSubitemRepeat(this)">&#x27F3;</button>'
+      +'<input class="sub-repeat" type="number" min="1" max="99" placeholder="N" value="'+(hasRepeat?repeat:'')+'" oninput="updateSubitemsTotal()" style="'+(hasRepeat?'':'display:none')+'">'
+      +'<button type="button" class="subitem-remove" onclick="removeSubitem(this)">✕</button>';
+  }
   area.appendChild(row);
   updateSubitemsTotal();
 }
@@ -351,39 +331,18 @@ async function saveEntry(){
     const{name,val,rawExpr,type,date,paidDate,month,year,obs,subitems,pessoaId}=getFormValues();
     if(!name){setFieldError('f-name','Informe o nome');return}
       if(!val||isNaN(val)||val<=0){setFieldError('f-val','Informe um valor válido');return}
-    const groupId=Date.now()+'_'+Math.random().toString(36).slice(2,7);
-    if(type==='credit'){
-      const pnum=parseInt(document.getElementById('f-pnum').value)||1;
-      const ptotal=parseInt(document.getElementById('f-ptotal').value)||1;
-      if(pnum>ptotal){setFieldError('f-pnum','Parcela atual maior que o total');return}
-      let m=month,y=year,d=date;
-      for(let i=pnum-1;i<ptotal;i++){
-        await dbAdd({name:`${name} ${i+1}/${ptotal}`,value:val,rawExpr,type,month:m,year:y,ym:ym(y,m),date:d,paidDate,obs,subitems,pessoaId,groupId,createdAt:Date.now()});
-        if(d){const nd=addMonths(d,1);if(nd)d=nd;}m++;if(m>11){m=0;y++}
-      }
-      toast(`${ptotal-pnum+1} parcela(s) salva(s)!`,'var(--purple)');
-    } else if(document.getElementById('f-recur')?.value==='monthly'){
-      const countRaw=document.getElementById('f-recur-count')?.value||'12';const count=Math.max(1,parseInt(countRaw.trim())||12);
-      let m=month,y=year,d=date;
-      for(let i=0;i<count;i++){
-        await dbAdd({name,value:val,rawExpr,type,month:m,year:y,ym:ym(y,m),date:d,paidDate,obs,subitems,pessoaId,groupId,recurring:true,createdAt:Date.now()});
-        if(d){const nd=addMonths(d,1);if(nd)d=nd;}m++;if(m>11){m=0;y++}
-      }
-      toast(`Lançamento fixo — ${count} ${count===1?'mês':'meses'}!`,'var(--teal)');
-    } else {
-      // item com subitems que tem repeat: salva 1 registro com subitems raw
-      const rawSubs=getRawSubitems();
-      const hasSubRepeat=rawSubs.some(s=>s.repeat>0);
-      if(hasSubRepeat){
-        await dbAdd({name,value:val,rawExpr,type,month,year,ym:ym(year,month),date,paidDate,obs,
-          subitems:rawSubs,pessoaId,
-          subRepeatStart:{month,year},
-          createdAt:Date.now()});
-        toast('Lançamento salvo!');
-      }else{
-        await dbAdd({name,value:val,rawExpr,type,month,year,ym:ym(year,month),date,paidDate,obs,subitems,pessoaId,createdAt:Date.now()});
-        toast('Lançamento salvo!');
-      }
+    // item com subitems que tem repeat: salva 1 registro com subitems raw
+    const rawSubs=getRawSubitems();
+    const hasSubRepeat=rawSubs.some(s=>s.repeat>0);
+    if(hasSubRepeat){
+      await dbAdd({name,value:val,rawExpr,type,month,year,ym:ym(year,month),date,paidDate,obs,
+        subitems:rawSubs,pessoaId,
+        subRepeatStart:{month,year},
+        createdAt:Date.now()});
+      toast('Lançamento salvo!');
+    }else{
+      await dbAdd({name,value:val,rawExpr,type,month,year,ym:ym(year,month),date,paidDate,obs,subitems,pessoaId,createdAt:Date.now()});
+      toast('Lançamento salvo!');
     }
     closeModal();renderAll();
 
@@ -403,28 +362,7 @@ async function updateEntry(id){
     const existing=all.find(x=>x.id===id);
     if(!existing)return;
 
-    const recurVal=document.getElementById('f-recur')?.value;
-    const isNewRecur=recurVal==='monthly';
     const hasGroup=!!existing.groupId;
-
-    if(isNewRecur){
-      const countRaw=document.getElementById('f-recur-count')?.value||'12';const count=Math.max(1,parseInt(countRaw.trim())||12);
-      if(hasGroup){
-        const sameGroup=all.filter(x=>x.groupId===existing.groupId&&ym(x.year,x.month)>=ym(existing.year,existing.month));
-        for(const x of sameGroup)await dbDel(x.id);
-      } else {
-        await dbDel(id);
-      }
-      const newGroupId=Date.now()+'_'+Math.random().toString(36).slice(2,7);
-      let m=month,y=year,d=date;
-      for(let i=0;i<count;i++){
-        await dbAdd({name,value:val,rawExpr,type,month:m,year:y,ym:ym(y,m),date:d,paidDate,obs,subitems,pessoaId,groupId:newGroupId,recurring:true,createdAt:Date.now()});
-        if(d){const nd=addMonths(d,1);if(nd)d=nd;}m++;if(m>11){m=0;y++}
-      }
-      toast(`Série de ${count} meses criada!`,'var(--teal)');
-      closeModal();renderAll();
-      return;
-    }
 
     if(hasGroup){
       const futureInGroup=all.filter(x=>x.groupId===existing.groupId&&ym(x.year,x.month)>ym(existing.year,existing.month));
@@ -607,15 +545,6 @@ async function renderDash(){
       <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${barColor}"></div></div>
       <div class="prog-labels"><span>${pct}% comprometido</span><span style="color:${barColor};font-weight:500">${pct<60?'✓ Saudável':pct<85?'⚠ Atenção':'✗ Alto'}</span></div>
     `;
-    const enrichedRows=rows.map(t=>{
-      const base={...t,_pessoa:t.pessoaId?pessoaMap[t.pessoaId]:null};
-      if(t.subRepeatStart&&t.subitems&&t.subitems.length){
-        const activeSubs=getActiveSubitems(t.subitems,t.subRepeatStart.month,t.subRepeatStart.year,t.month,t.year);
-        return {...base,subitems:activeSubs,value:activeSubs.length?activeSubs.reduce((s,x)=>s+x.value,0):t.value};
-      }
-      return base;
-    });
-    const recent=[...enrichedRows].sort((a,b)=>(b.date||'')>(a.date||'')?1:(b.date||'')<(a.date||'')?-1:b.id-a.id).slice(0,6);
     // pessoa summary card
     const pessoaSummaryEl=document.getElementById('pessoa-summary');
     const pessoaSummaryCard=document.getElementById('pessoa-summary-card');
@@ -637,10 +566,6 @@ async function renderDash(){
     }else{
       if(pessoaSummaryCard)pessoaSummaryCard.style.display='none';
     }
-    document.getElementById('recent-list').innerHTML=recent.length
-      ?recent.map(txCard).join('')
-      :`<div class="empty"><div class="empty-icon">📊</div>Nenhum lançamento em ${MONTHS[curMonth]}.<br>Toque em <strong>+ Novo</strong> para começar.</div>`;
-
   }catch(e){
     console.error('[renderDash]',e);
     toast('Erro ao carregar dashboard','var(--red)');

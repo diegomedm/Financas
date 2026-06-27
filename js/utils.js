@@ -35,7 +35,7 @@ function hasOp(s){return/[+\-*/]/.test(s)}
 
 function showConfirm(title,msg,buttons){
   document.getElementById('confirm-title').textContent=title;
-  document.getElementById('confirm-msg').textContent=msg;
+  document.getElementById('confirm-msg').innerHTML=msg;
   const btns=document.getElementById('confirm-btns');
   btns.innerHTML='';
   buttons.forEach(b=>{

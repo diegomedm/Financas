@@ -33,6 +33,14 @@
 - **Identificado em:** Sprint 1 — Split de cards.js (2026-06-26)
 - **Status:** Não corrigido (fora do escopo do Sprint 1 — RT-04)
 
+### [DT-006] `delOne` em `deleteBudgetItem` sem invalidar cache de `budgetDone`
+- **Arquivo:** `js/budget.js` — função `delOne` dentro de `deleteBudgetItem`
+- **Descrição:** Abre `db.transaction('budgetDone','readwrite')` diretamente sem chamar `invalidateCache('budgetDone')` após deletar. Viola Regra #13 do CONTEXT.md. Cache pode ficar stale se o usuário deletar itens de orçamento com realizações na mesma sessão sem reload.
+- **Impacto:** Baixo — manifestação requer cache populado + deleção de série na mesma sessão
+- **Proposta:** Adicionar `invalidateCache('budgetDone')` após a Promise em `delOne`
+- **Identificado em:** Code Review Sprint 2 (2026-06-26) — pré-existente, não introduzido pelo sprint
+- **Status:** Não corrigido
+
 ### [DT-004] projection.js muito simples (36 linhas)
 - **Impacto:** Baixo — projeção não considera budget nem cartões, apenas TX passados
 - **Proposta:** Enriquecer com dados de orçamento para projeção mais precisa
