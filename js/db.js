@@ -119,11 +119,21 @@ const doneAllForMonth=async(y,m)=>{
 };
 
 /* ── CATEGORIAS CARTAO ── */
+const _hasCatStore=()=>db.objectStoreNames.contains('categoriasCartao');
 const categoriasCartaoAll=()=>{
-  if(!db.objectStoreNames.contains('categoriasCartao'))return Promise.resolve([]);
+  if(!_hasCatStore())return Promise.resolve([]);
   const hit=_cacheRead('categoriasCartao');if(hit)return hit;
   return new Promise(res=>{const t=db.transaction('categoriasCartao','readonly');t.objectStore('categoriasCartao').getAll().onsuccess=e=>res(_cacheWrite('categoriasCartao',e.target.result||[]))});
 };
-const categoriasCartaoAdd=item=>new Promise((res,rej)=>{invalidateCache('categoriasCartao');const t=db.transaction('categoriasCartao','readwrite');const r=t.objectStore('categoriasCartao').add(item);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
-const categoriasCartaoPut=item=>new Promise((res,rej)=>{invalidateCache('categoriasCartao');const t=db.transaction('categoriasCartao','readwrite');const r=t.objectStore('categoriasCartao').put(item);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)});
-const categoriasCartaoDel=id=>new Promise(res=>{invalidateCache('categoriasCartao');const t=db.transaction('categoriasCartao','readwrite');t.objectStore('categoriasCartao').delete(id).onsuccess=()=>res()});
+const categoriasCartaoAdd=item=>{
+  if(!_hasCatStore())return Promise.reject(new Error('Store categoriasCartao não disponível. Acesse Configurações → Atualizar para aplicar a atualização do banco.'));
+  return new Promise((res,rej)=>{invalidateCache('categoriasCartao');const t=db.transaction('categoriasCartao','readwrite');const r=t.objectStore('categoriasCartao').add(item);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+};
+const categoriasCartaoPut=item=>{
+  if(!_hasCatStore())return Promise.reject(new Error('Store categoriasCartao não disponível.'));
+  return new Promise((res,rej)=>{invalidateCache('categoriasCartao');const t=db.transaction('categoriasCartao','readwrite');const r=t.objectStore('categoriasCartao').put(item);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)});
+};
+const categoriasCartaoDel=id=>{
+  if(!_hasCatStore())return Promise.resolve();
+  return new Promise(res=>{invalidateCache('categoriasCartao');const t=db.transaction('categoriasCartao','readwrite');t.objectStore('categoriasCartao').delete(id).onsuccess=()=>res()});
+};
