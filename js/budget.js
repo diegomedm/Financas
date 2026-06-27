@@ -998,10 +998,16 @@ async function renderBudget(){
 
 /* ── CATEGORIAS ORÇADAS ── */
 
+function _isRefMonthOrFuture(){
+  var rm=parseInt(localStorage.getItem('refMonth')),ry=parseInt(localStorage.getItem('refYear'));
+  if(isNaN(rm)||isNaN(ry)){var n=new Date();rm=n.getMonth();ry=n.getFullYear();}
+  return curYear*12+curMonth>=ry*12+rm;
+}
 function _renderCategoriasBudget(allBudgetItems, todosGastos, todasTx, cartoes){
   const section=document.getElementById('categorias-budget-section');
   const list=document.getElementById('categorias-budget-list');
   if(!section||!list)return;
+  if(!_isRefMonthOrFuture()){section.style.display='none';return;}
   section.style.display='';
   const cats=allBudgetItems.filter(function(b){return b.categoriaKey;});
   if(!cats.length){

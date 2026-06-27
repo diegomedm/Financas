@@ -58,12 +58,26 @@ function changeMonth(d){
   curMonth+=d;if(curMonth<0){curMonth=11;curYear--}if(curMonth>11){curMonth=0;curYear++}
   renderAll();
 }
-// changeBudgetMonth replaced by changeMonth
+function setRefMonth(){
+  localStorage.setItem('refMonth',curMonth);
+  localStorage.setItem('refYear',curYear);
+  updateMonthLabels();
+  toast(MONTHS[curMonth]+' '+curYear+' definido como mês atual','var(--teal)');
+}
+function isCurrentRef(){
+  var rm=parseInt(localStorage.getItem('refMonth')),ry=parseInt(localStorage.getItem('refYear'));
+  if(isNaN(rm)||isNaN(ry)){var n=new Date();rm=n.getMonth();ry=n.getFullYear();}
+  return curMonth===rm&&curYear===ry;
+}
 function updateMonthLabels(){
   const txt=MONTHS[curMonth].substring(0,3)+' '+curYear;
   ['dash','tx','cards','budget','proj'].forEach(id=>{const el=document.getElementById('month-label-'+id);if(el)el.textContent=txt});
   const ml=document.getElementById('tx-month-label');
   if(ml)ml.textContent=MONTHS[curMonth]+' de '+curYear;
+  // Botão de pin: visível apenas quando mês navegado != mês de referência
+  document.querySelectorAll('.set-ref-btn').forEach(function(btn){
+    btn.style.display=isCurrentRef()?'none':'inline-flex';
+  });
 }
 
 async function renderAll(){

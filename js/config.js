@@ -10,7 +10,9 @@ async function exportData(){
     const budgetDoneAll=await new Promise(res=>{const t=db.transaction('budgetDone','readonly');t.objectStore('budgetDone').getAll().onsuccess=e=>res(e.target.result||[])});
     const recorrentes=await recorrentesAll();
     const lastUpdateHistory=JSON.parse(localStorage.getItem('lastUpdateHistory')||'[]');
-    const json=JSON.stringify({version:6,exportedAt:new Date().toISOString(),data:all,budget:buds,pessoas,cartoes,gastos,recorrentes,budgetDone:budgetDoneAll,lastUpdateHistory},null,2);
+    const refMonth=localStorage.getItem('refMonth');
+    const refYear=localStorage.getItem('refYear');
+    const json=JSON.stringify({version:6,exportedAt:new Date().toISOString(),data:all,budget:buds,pessoas,cartoes,gastos,recorrentes,budgetDone:budgetDoneAll,lastUpdateHistory,refMonth,refYear},null,2);
     const blob=new Blob([json],{type:'application/json'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
@@ -149,6 +151,11 @@ function importData(e){
         localStorage.setItem('lastUpdateHistory',JSON.stringify(deduped));
         localStorage.setItem('lastUpdate',String(deduped[deduped.length-1]));
         if(typeof loadLastUpdate==='function')loadLastUpdate();
+      }
+      // restaurar mês de referência
+      if(obj.refMonth!=null&&obj.refYear!=null){
+        localStorage.setItem('refMonth',obj.refMonth);
+        localStorage.setItem('refYear',obj.refYear);
       }
       toast(`${count} registros importados!`,'var(--green)');
       renderAll();renderBudget();renderCards();renderPersonFilterBars();renderPessoasConfig();

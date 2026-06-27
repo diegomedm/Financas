@@ -1,7 +1,10 @@
 const MONTHS=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const ICONS={income:'💵',fixed:'🏠',variable:'🛒',credit:'💳'};
 const CAT_LABELS={income:'Receita',fixed:'Despesa Fixa',variable:'Despesa Variável',credit:'Cartão de Crédito'};
-let db, curMonth=new Date().getMonth(), curYear=new Date().getFullYear(), txFilter='all';
+let _refM=parseInt(localStorage.getItem('refMonth')),_refY=parseInt(localStorage.getItem('refYear'));
+const refMonth=isNaN(_refM)?new Date().getMonth():_refM;
+const refYear=isNaN(_refY)?new Date().getFullYear():_refY;
+let db, curMonth=refMonth, curYear=refYear, txFilter='all';
 let budgetMonth=new Date().getMonth(), budgetYear=new Date().getFullYear();
 let deferredInstall=null;
 let pessoaFilter=null;
