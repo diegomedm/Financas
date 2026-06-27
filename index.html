@@ -465,6 +465,13 @@ input.field-invalid,select.field-invalid,textarea.field-invalid{border-color:var
     <div id="budget-progress" class="budget-progress"><div id="budget-progress-fill" class="budget-progress-fill" style="width:0%"></div></div>
     <div id="budget-summary-text"></div>
   </div>
+  <div class="card" id="categorias-budget-section" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="card-title" style="margin-bottom:0">Categorias Orçadas</div>
+      <button class="btn btn-ghost btn-sm" onclick="showAddCategoriaModal()">+ Categoria</button>
+    </div>
+    <div id="categorias-budget-list"></div>
+  </div>
   <div id="budget-list"></div>
 </div>
 
