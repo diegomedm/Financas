@@ -363,13 +363,13 @@ input.field-invalid,select.field-invalid,textarea.field-invalid{border-color:var
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
     </button>
   </div>
-  <div style="display:flex;justify-content:center;margin-bottom:14px">
+  <div style="display:flex;justify-content:center;margin-bottom:14px;position:relative">
     <div class="month-nav">
       <button onclick="changeMonth(-1)">‹</button>
       <span class="month-label" id="month-label-dash"></span>
       <button onclick="changeMonth(1)">›</button>
-      <button class="set-ref-btn" onclick="setRefMonth()" title="Definir como mês atual" style="display:none;font-size:16px;padding:0;width:30px;height:30px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer">📌</button>
     </div>
+    <button class="set-ref-btn" onclick="setRefMonth()" title="Definir como mês atual" style="display:none;position:absolute;right:16px;font-size:16px;padding:0;width:30px;height:30px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer">📌</button>
   </div>
   <div id="install-banner">
     <span style="font-size:22px">📲</span>
@@ -399,12 +399,13 @@ input.field-invalid,select.field-invalid,textarea.field-invalid{border-color:var
     <span class="page-title">Lançamentos</span>
     <button class="btn btn-primary btn-sm" onclick="showAddModal()">+ Novo</button>
   </div>
-  <div style="display:flex;justify-content:center;align-items:center;margin-bottom:12px">
+  <div style="display:flex;justify-content:center;align-items:center;margin-bottom:12px;position:relative">
     <div class="month-nav">
       <button onclick="changeMonth(-1)">‹</button>
       <span class="month-label" id="month-label-tx"></span>
       <button onclick="changeMonth(1)">›</button>
     </div>
+    <button class="set-ref-btn" onclick="setRefMonth()" title="Definir como mês atual" style="display:none;position:absolute;right:16px;font-size:16px;padding:0;width:30px;height:30px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer">📌</button>
   </div>
   <div class="tabs" id="tx-tabs">
     <button class="tab active" onclick="filterTx('all',this)">Todos</button>
@@ -428,7 +429,7 @@ input.field-invalid,select.field-invalid,textarea.field-invalid{border-color:var
       <input type="number" id="proj-custom-input" min="1" max="60" placeholder="…" onchange="setProjPeriodsCustom(this.value)" style="width:46px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg3);color:var(--text);font-size:13px;text-align:center">
     </div>
   </div>
-  <div style="display:flex;justify-content:center;margin-bottom:14px">
+  <div style="display:flex;justify-content:center;margin-bottom:14px;position:relative">
     <div class="month-nav">
       <button onclick="changeMonth(-1)">‹</button>
       <span class="month-label" id="month-label-proj"></span>
@@ -454,7 +455,7 @@ input.field-invalid,select.field-invalid,textarea.field-invalid{border-color:var
     <span class="page-title">Orçamento</span>
     <button class="btn btn-primary btn-sm" onclick="showBudgetAddModal()">+ Item</button>
   </div>
-  <div style="display:flex;justify-content:center;margin-bottom:14px">
+  <div style="display:flex;justify-content:center;margin-bottom:14px;position:relative">
     <div class="month-nav">
       <button onclick="changeMonth(-1)">‹</button>
       <span class="month-label" id="month-label-budget"></span>
@@ -540,7 +541,7 @@ input.field-invalid,select.field-invalid,textarea.field-invalid{border-color:var
     <span class="page-title">💳 Cartões</span>
     <button class="btn btn-primary btn-sm" onclick="showAddCartaoModal()">+ Cartão</button>
   </div>
-  <div style="display:flex;justify-content:center;margin-bottom:14px">
+  <div style="display:flex;justify-content:center;margin-bottom:14px;position:relative">
     <div class="month-nav">
       <button onclick="changeMonth(-1)">‹</button>
       <span class="month-label" id="month-label-cards"></span>
