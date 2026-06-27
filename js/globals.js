@@ -5,7 +5,7 @@ let db, curMonth=new Date().getMonth(), curYear=new Date().getFullYear(), txFilt
 let budgetMonth=new Date().getMonth(), budgetYear=new Date().getFullYear();
 let deferredInstall=null;
 let pessoaFilter=null;
-let projPeriods=3;
+let projPeriods=(function(){var v=parseInt(localStorage.getItem('projPeriods'));return(v===3||v===6||v===12)?v:3;}());
 let _numpadExpr='', _numpadTarget=null, _numpadResolve=null;
 let _dbCache={};
 function invalidateCache(store){delete _dbCache[store];}

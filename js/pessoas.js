@@ -170,7 +170,7 @@ async function renderPersonFilterBars(){
 
   try{
     const pessoas=await pessoasAll();
-    ['dash','tx','budget'].forEach(page=>{
+    ['dash','tx','budget','proj'].forEach(page=>{
       const el=document.getElementById('person-filter-bar-'+page);
       if(!el)return;
       if(!pessoas.length){el.innerHTML='';return;}

@@ -55,7 +55,7 @@ body{min-height:100vh;padding-bottom:76px}
 .color-swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:border-color .15s;flex-shrink:0}
 .color-swatch.selected{border-color:var(--text)}
 /* PERSON FILTER BAR */
-#person-filter-bar-dash,#person-filter-bar-tx,#person-filter-bar-budget{display:flex;gap:6px;margin:12px 0;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+#person-filter-bar-dash,#person-filter-bar-tx,#person-filter-bar-budget,#person-filter-bar-proj{display:flex;gap:6px;margin:12px 0;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
 #person-filter-bar::-webkit-scrollbar{display:none}
 .person-filter-btn{padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;transition:all .2s;white-space:nowrap;font-family:var(--font);font-weight:500;display:inline-flex;align-items:center;gap:5px}
 .person-filter-btn.active{border-color:currentColor;font-weight:600}
@@ -204,11 +204,13 @@ select option{background:var(--bg3)}
 .nk.zero{grid-column:span 1}
 
 /* PROJ */
-.proj-header{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:8px;padding:0 4px;letter-spacing:.3px;text-transform:uppercase}
-.proj-row{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px}
-.proj-month-name{font-size:13px;font-weight:500;min-width:80px}
-.proj-vals{display:flex;gap:10px;font-family:var(--mono);font-size:12px}
-.proj-balance{font-weight:600;min-width:80px;text-align:right}
+.proj-header{display:grid;grid-template-columns:80px 1fr 1fr 1fr;font-size:11px;color:var(--text3);margin-bottom:8px;padding:0 13px;letter-spacing:.3px;text-transform:uppercase}
+.proj-header span{text-align:right}
+.proj-header span:first-child{text-align:left}
+.proj-row{display:grid;grid-template-columns:80px 1fr 1fr 1fr;align-items:center;padding:11px 13px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px}
+.proj-month-name{font-size:13px;font-weight:500}
+.proj-val{font-family:var(--mono);font-size:12px;text-align:right}
+.proj-balance{font-weight:600;text-align:right}
 
 /* BUDGET PAGE */
 .budget-item{display:flex;align-items:flex-start;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 13px;transition:background .15s;margin-bottom:7px}
@@ -416,28 +418,33 @@ input.field-invalid,select.field-invalid,textarea.field-invalid{border-color:var
 
 <!-- PROJEÇÃO -->
 <div id="page-proj" class="page">
-  <div class="page-header"><span class="page-title">Projeção</span></div>
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div class="card-title" style="margin:0">Períodos</div>
-      <div style="display:flex;gap:6px">
-        <button class="tab active" id="proj-tab-3" onclick="setProjPeriods(3,this)">3</button>
-        <button class="tab" id="proj-tab-6" onclick="setProjPeriods(6,this)">6</button>
-        <button class="tab" id="proj-tab-12" onclick="setProjPeriods(12,this)">12</button>
-      </div>
+  <div class="page-header">
+    <span class="page-title">Projeção</span>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button class="tab active" id="proj-tab-3" onclick="setProjPeriods(3,this)">3m</button>
+      <button class="tab" id="proj-tab-6" onclick="setProjPeriods(6,this)">6m</button>
+      <button class="tab" id="proj-tab-12" onclick="setProjPeriods(12,this)">12m</button>
+      <input type="number" id="proj-custom-input" min="1" max="60" placeholder="…" onchange="setProjPeriodsCustom(this.value)" style="width:46px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg3);color:var(--text);font-size:13px;text-align:center">
     </div>
+  </div>
+  <div style="display:flex;justify-content:center;margin-bottom:14px">
+    <div class="month-nav">
+      <button onclick="changeMonth(-1)">‹</button>
+      <span class="month-label" id="month-label-proj"></span>
+      <button onclick="changeMonth(1)">›</button>
+    </div>
+  </div>
+  <div id="person-filter-bar-proj" style="margin-bottom:12px"></div>
+  <div class="card">
     <div class="proj-header">
       <span>Mês</span>
-      <div style="display:flex;gap:10px">
-        <span style="color:var(--green)">Entrada</span>
-        <span style="color:var(--red)">Saída</span>
-        <span style="color:var(--blue)">Saldo</span>
-      </div>
+      <span style="color:var(--green)">Entrada</span>
+      <span style="color:var(--red)">Saída</span>
+      <span style="color:var(--blue)">Saldo</span>
     </div>
     <div id="proj-list"></div>
     <div id="proj-total" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"></div>
   </div>
-
 </div>
 
 <!-- ORÇAMENTO -->

@@ -3,6 +3,24 @@
 > Arquivo append-only. Nunca editar entradas existentes. Sempre adicionar no topo.
 
 ---
+**2026-06-27 — QA Engineer**
+- Feito: Verificação estática dos 4 arquivos do Sprint 4 (globals.js, projection.js, pessoas.js, index.html) — node --check aprovado nos 3 JS; sem violações de restrições técnicas introduzidas por esta sprint
+- Feito: Elaboração de 24 casos de teste manuais cobrindo todos os 5 CAs da spec (CA-01 a CA-05) + RNs relevantes
+- Decisões: nested template literals em pessoas.js linhas 55/60 são pré-existentes (git diff confirmado) — não bloqueiam esta sprint; formato de chave budgetDone em projection.js validado como consistente com db.js
+- Artefatos: `.claude/specs/sprint-4-projecao-qa.md` (criado), `.claude/progress/current.md` (atualizado)
+- Pendências: execução dos testes manuais; veredicto final QA após execução
+---
+
+---
+**2026-06-27 — Product Owner**
+- Feito: Leitura de index.html, globals.js, projection.js, budget.js, transactions.js, db.js, utils.js, app.js para embasar spec do Sprint 4
+- Feito: Criação de `.claude/specs/sprint-4-projecao.md` — spec completa com 3 mudanças, 5 blocos de CAs em BDD, 8 RNs, tabela de arquivos a modificar, DoD e 5 riscos documentados
+- Decisões: usar `item.value` diretamente para items com `subRepeatStart` (não calcular subitems ativos — fora do escopo); items sem `pessoaId` excluídos quando filtro ativo (consistência com `renderBudget()`); chave localStorage `'projPeriods'` com fallback para 3 e validação de valor aceito
+- Artefatos: `.claude/specs/sprint-4-projecao.md` (criado), `.claude/progress/current.md` (atualizado)
+- Pendências: Tech Lead validar acesso a `_budgetDoneAll()` e padrão de chamada única de budget/done antes do loop; Code Review + QA Sprint 3 ainda pendentes
+---
+
+---
 **2026-06-27 — Senior Software Engineer**
 - Feito: Sprint 3 implementado — dois gráficos Chart.js no dashboard
 - Decisões: arrow functions evitadas em callbacks Chart.js (mobile safety); label do primeiro mês do Gráfico B sempre inclui "/AA"; destroy+innerHTML antes de new Chart para limpar canvas fantasma sem depender de .destroy() sozinho; renderCharts chamado dentro do try de renderDash para aproveitar catch existente

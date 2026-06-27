@@ -61,7 +61,7 @@ function changeMonth(d){
 // changeBudgetMonth replaced by changeMonth
 function updateMonthLabels(){
   const txt=MONTHS[curMonth].substring(0,3)+' '+curYear;
-  ['dash','tx','cards','budget'].forEach(id=>{const el=document.getElementById('month-label-'+id);if(el)el.textContent=txt});
+  ['dash','tx','cards','budget','proj'].forEach(id=>{const el=document.getElementById('month-label-'+id);if(el)el.textContent=txt});
   const ml=document.getElementById('tx-month-label');
   if(ml)ml.textContent=MONTHS[curMonth]+' de '+curYear;
 }
