@@ -1002,9 +1002,12 @@ function _renderCategoriasBudget(allBudgetItems, todosGastos, todasTx, cartoes){
   const section=document.getElementById('categorias-budget-section');
   const list=document.getElementById('categorias-budget-list');
   if(!section||!list)return;
-  const cats=allBudgetItems.filter(function(b){return b.categoriaKey;});
-  if(!cats.length){section.style.display='none';return;}
   section.style.display='';
+  const cats=allBudgetItems.filter(function(b){return b.categoriaKey;});
+  if(!cats.length){
+    list.innerHTML='<div style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Nenhuma categoria criada ainda</div>';
+    return;
+  }
   var html='';
   cats.forEach(function(cat){
     var realizado=calcCategoriaRealizado(cat.id,todosGastos,todasTx,cartoes,curMonth,curYear);
