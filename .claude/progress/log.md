@@ -3,6 +3,52 @@
 > Arquivo append-only. Nunca editar entradas existentes. Sempre adicionar no topo.
 
 ---
+
+**2026-06-27 — QA Engineer**
+- Feito: Verificação estática completa da Sprint 5 — 12 itens do checklist analisados
+- Decisões: VEREDICTO ESTÁTICO: LIBERADO. Nenhum bloqueante. JSON.stringify em cards-render.js linha 158 é legado pré-Sprint 5, com mitigação .replace, não introduzido nesta entrega.
+- Artefatos: .claude/progress/current.md (atualizado), .claude/progress/log.md (esta entrada). Plano de smoke test manual (ST-01 a ST-08) entregue ao usuário.
+- Pendências: Usuário deve executar smoke test manual no browser (ST-01 a ST-08) antes do commit.
+
+---
+
+**2026-06-27 — Senior Dev**
+- Feito: Aplicados fixes DT-009 e DT-010 pré-smoke test. DT-009: removido bloco completo de código morto (5 funções + comentário de bloco) de `js/cards-modal.js` após grep confirmar zero referências externas. DT-010: adicionado `console.warn` antes do `continue` em `calcCategoriaRealizado` em `js/budget.js`.
+- Decisões: remoção do DT-009 confirmada segura via grep em HTML e todos os JS — nenhuma referência externa encontrada.
+- Artefatos: `js/cards-modal.js` (bloco CATEGORIAS CARTAO removido), `js/budget.js` (console.warn adicionado)
+- Pendências: smoke test manual pelo QA; commit aguarda aprovação.
+
+---
+
+**2026-06-27 — Code Reviewer**
+- O que foi feito: Code Review da Sprint 5 — Migração de Categorias para o Orçamento. Revisados 4 arquivos JS e index.html.
+- Decisões: APROVADO COM RESSALVAS — nenhum bloqueante; 2 apontamentos importantes (DT-009 funções legadas em cards-modal.js, DT-010 gasto sem cartão silenciado em calcCategoriaRealizado); node --check passou em todos os arquivos; nenhuma violação de restrições técnicas.
+- Artefatos: .claude/debt/backlog.md (DT-009 e DT-010 adicionados), .claude/progress/current.md (atualizado), .claude/progress/log.md (esta entrada)
+- Pendências: Dev decide sobre DT-009 e DT-010 antes de passar para QA; DT-007 e DT-008 da Sprint 4b resolvidos automaticamente pela Sprint 5 (delta removido, seção Por Categoria lê budget)
+
+---
+
+**2026-06-27 — Senior Dev**
+- Feito: Implementação completa da Sprint 5 — Migração de Categorias para o Orçamento em 4 arquivos JS
+- Decisões: (1) `calcCategoriaRealizado` implementada como função síncrona pura recebendo arrays pré-carregados; (2) `onBudgetCategoriaToggle` como função auxiliar para atualizar o slug ao marcar toggle; (3) `#categorias-cartao-section` ocultado via `display:none` em vez de apenas esvaziar innerHTML, eliminando espaço visual residual; (4) `_popularCategoriaTx` extraída como função auxiliar reutilizada em `showAddModal` e `showEditModal`
+- Artefatos: `js/budget.js` (toCategoriaKey, onBudgetCategoriaToggle, campo categoriaKey no modal, calcCategoriaRealizado, barra de progresso no renderBudget, categoriaKey em saveBudgetItem/saveBudgetEdit), `js/cards-render.js` (remoção do delta getCartaoBudgetItems, seção "Por Categoria" lê budgetAll, seção categorias removida), `js/cards-modal.js` (select #cg-categoria via budgetAll), `js/transactions.js` (select #f-categoria, _popularCategoriaTx, categoriaId em getFormValues/saveEntry/updateEntry)
+- Pendências: Smoke test manual no browser (10 passos do DoD) — aguarda Code Reviewer antes do commit
+
+---
+
+**2026-06-27 — Product Owner**
+- Feito: Leitura completa de `plan-sprint5-categorias-budget.md`, `db.js`, `budget.js`, `cards-render.js`, `cards-modal.js`, `transactions.js` e `projection.js`. Escrita da spec completa da Sprint 5.
+- Decisões: (1) `calcCategoriaRealizado` deve receber dados pré-carregados como parâmetro para evitar múltiplos round-trips ao cache IDB dentro do loop de `renderBudget`; (2) `projection.js` confirmado como não precisando de alteração — usa apenas `citem.value` de `getCartaoBudgetItems`; (3) Orphans da Sprint 4b tratados silenciosamente em todos os contextos (budget, fatura, modais).
+- Artefatos: `.claude/specs/sprint-5-categorias-budget.md` (criado), `.claude/progress/current.md` (atualizado)
+- Pendências: Implementação pela Fase 1 (`budget.js`) — aguarda Senior Dev
+
+---
+**2026-06-27 — Discovery Agent**
+- Feito: Leitura completa de db.js, budget.js, cards-render.js, cards-modal.js, transactions.js e progress/current.md para entender o estado da Sprint 4b
+- Decisões: Classificado como N2 (refatoração interna com dados reais, escopo delimitado); estratégia de orphan para dados antigos da categoriasCartao; store categoriasCartao mantida como legado sem ser deletada; sem bump de versão do IDB
+- Artefatos: .claude/discovery/plan-sprint5-categorias-budget.md, .claude/progress/current.md atualizado
+- Pendências: Aprovação do usuário; leitura de js/projection.js antes da implementação (risco identificado no plano)
+---
 **2026-06-27 — Senior Software Engineer**
 - Feito: Sprint 4b implementado — categorias orçadas de cartão (store categoriasCartao, CRUD modal, select no gasto, seção Por Categoria na fatura, delta na projeção)
 - Feito: Fix bug bloqueante saveRecorrenteEdit (DT-005) — declarações movidas antes das validações

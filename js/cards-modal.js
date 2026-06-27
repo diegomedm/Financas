@@ -210,16 +210,18 @@ function showAddGastoModal(cartaoId, cartao, gasto=null){
     </div>`);
   setTimeout(()=>{
     updateFaturaPreview(cartao);
-    // Popular select de categoria
-    categoriasCartaoAll().then(function(cats){
+    // Popular select de categoria — lê de budgetAll() filtrado por categoriaKey (Sprint 5)
+    budgetAll().then(function(budgets){
       var sel=document.getElementById('cg-categoria');
       if(!sel)return;
       var opts='<option value="">— Sem categoria —</option>';
-      var sorted=cats.slice().sort(function(a,b){return(a.name||'').localeCompare(b.name||'');});
+      var filtered=budgets.filter(function(b){return b.categoriaKey;});
+      var sorted=filtered.slice().sort(function(a,b){return(a.name||'').localeCompare(b.name||'');});
       for(var ci=0;ci<sorted.length;ci++){
-        var cat=sorted[ci];
-        var sel2=isEdit&&gasto&&gasto.categoriaId===cat.id?'selected':'';
-        opts+='<option value="'+cat.id+'" '+sel2+'>'+cat.name+'</option>';
+        var bud=sorted[ci];
+        // Orphan: se categoriaId não existe nos itens filtrados, nenhum fica selecionado
+        var sel2=isEdit&&gasto&&gasto.categoriaId===bud.id?'selected':'';
+        opts+='<option value="'+bud.id+'" '+sel2+'>'+bud.name+'</option>';
       }
       sel.innerHTML=opts;
     }).catch(function(){});
@@ -644,118 +646,6 @@ async function editCartao(cartaoId){
   }catch(e){
     console.error('[editCartao]',e);
     toast('Erro ao abrir cartão','var(--red)');
-  }
-}
-
-/* ── CATEGORIAS CARTAO ── */
-
-function showAddCategoriaModal(){
-  openModal(
-    '<div class="modal-title">Nova Categoria</div>'+
-    '<div class="form-group">'+
-    '<label>Nome</label>'+
-    '<input id="cat-name" placeholder="Ex: Gasolina, Mercado..." oninput="clearFieldError(\'cat-name\')">'+
-    '<div class="field-error-msg" id="cat-name-err"></div>'+
-    '</div>'+
-    '<div class="form-group">'+
-    '<label>Valor Orçado Mensal</label>'+
-    '<input id="cat-valor" type="text" inputmode="decimal" placeholder="0,00" oninput="clearFieldError(\'cat-valor\')">'+
-    '<div class="field-error-msg" id="cat-valor-err"></div>'+
-    '</div>'+
-    '<div class="btn-row" style="margin-top:4px">'+
-    '<button class="btn btn-primary" style="flex:1" onclick="">Salvar</button>'+
-    '<button class="btn btn-ghost" style="flex:1" onclick="closeModal()">Cancelar</button>'+
-    '</div>'
-  );
-  setTimeout(function(){
-    var saveBtn=document.querySelector('#modal-content .btn-primary');
-    if(saveBtn)saveBtn.onclick=saveCategoria;
-    var inp=document.getElementById('cat-name');
-    if(inp)inp.focus();
-  },50);
-}
-
-function showEditCategoriaModal(id){
-  categoriasCartaoAll().then(function(cats){
-    var cat=cats.find(function(c){return c.id===id;});
-    if(!cat)return;
-    openModal(
-      '<div class="modal-title">Editar Categoria</div>'+
-      '<div class="form-group">'+
-      '<label>Nome</label>'+
-      '<input id="cat-name" placeholder="Ex: Gasolina, Mercado..." value="'+cat.name.replace(/"/g,'&quot;')+'" oninput="clearFieldError(\'cat-name\')">'+
-      '<div class="field-error-msg" id="cat-name-err"></div>'+
-      '</div>'+
-      '<div class="form-group">'+
-      '<label>Valor Orçado Mensal</label>'+
-      '<input id="cat-valor" type="text" inputmode="decimal" placeholder="0,00" value="'+cat.valorOrcado+'" oninput="clearFieldError(\'cat-valor\')">'+
-      '<div class="field-error-msg" id="cat-valor-err"></div>'+
-      '</div>'+
-      '<div class="btn-row" style="margin-top:4px">'+
-      '<button class="btn btn-primary" style="flex:1" onclick="">Salvar</button>'+
-      '<button class="btn btn-ghost" style="flex:1" onclick="closeModal()">Cancelar</button>'+
-      '</div>'
-    );
-    setTimeout(function(){
-      var saveBtn=document.querySelector('#modal-content .btn-primary');
-      if(saveBtn)saveBtn.onclick=function(){saveEditCategoria(id);};
-    },50);
-  }).catch(function(e){
-    console.error('[showEditCategoriaModal]',e);
-    toast('Erro ao abrir categoria','var(--red)');
-  });
-}
-
-async function saveCategoria(){
-  try{
-    var name=document.getElementById('cat-name')?.value.trim();
-    var valorRaw=(document.getElementById('cat-valor')?.value||'').replace(',','.');
-    var valorOrcado=parseFloat(valorRaw);
-    if(!name){setFieldError('cat-name','Informe o nome');return;}
-    if(isNaN(valorOrcado)||valorOrcado<=0){setFieldError('cat-valor','Informe um valor válido (maior que zero)');return;}
-    await categoriasCartaoAdd({name,valorOrcado,createdAt:Date.now()});
-    toast('Categoria adicionada!','var(--teal)');
-    closeModal();
-    renderCards();
-  }catch(e){
-    console.error('[saveCategoria]',e);
-    toast('Erro ao salvar categoria','var(--red)');
-  }
-}
-
-async function saveEditCategoria(id){
-  try{
-    var name=document.getElementById('cat-name')?.value.trim();
-    var valorRaw=(document.getElementById('cat-valor')?.value||'').replace(',','.');
-    var valorOrcado=parseFloat(valorRaw);
-    if(!name){setFieldError('cat-name','Informe o nome');return;}
-    if(isNaN(valorOrcado)||valorOrcado<=0){setFieldError('cat-valor','Informe um valor válido (maior que zero)');return;}
-    var cats=await categoriasCartaoAll();
-    var existing=cats.find(function(c){return c.id===id;});
-    if(!existing)return;
-    await categoriasCartaoPut({...existing,name,valorOrcado});
-    toast('Categoria atualizada!','var(--teal)');
-    closeModal();
-    renderCards();
-  }catch(e){
-    console.error('[saveEditCategoria]',e);
-    toast('Erro ao salvar categoria','var(--red)');
-  }
-}
-
-async function deleteCategoria(id){
-  try{
-    showConfirm('Remover categoria','Gastos vinculados a esta categoria perderão a referência, mas não serão excluídos.',[
-      {label:'Remover',cls:'btn-danger',action:async function(){
-        await categoriasCartaoDel(id);
-        toast('Categoria removida','var(--red)');
-        renderCards();
-      }},
-      {label:'Cancelar',cls:'btn-ghost',action:function(){}}
-    ]);
-  }catch(e){
-    console.error('[deleteCategoria]',e);
-    toast('Erro ao remover categoria','var(--red)');
   }
 }
 

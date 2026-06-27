@@ -75,6 +75,10 @@ function entryFormHtml(t=null){
       <label>Observações <span class="label-muted">(opcional)</span></label>
       <textarea id="f-obs" placeholder="Detalhes, itens agrupados...">${defObs}</textarea>
     </div>
+    <div class="form-group">
+      <label>Categoria <span class="label-muted">(opcional)</span></label>
+      <select id="f-categoria"></select>
+    </div>
     <div class="btn-row" style="margin-top:4px">
       <button class="btn btn-primary" style="flex:1" onclick="${isEdit?`updateEntry(${t.id})`:'saveEntry()'}">${isEdit?'Salvar edição':'Salvar'}</button>
       <button class="btn btn-ghost" style="flex:1" onclick="closeModal()">Cancelar</button>
@@ -130,7 +134,28 @@ function onTypeChange(){
   // type change handler mantido para compatibilidade com o select existente
 }
 
-function showAddModal(){openModal(entryFormHtml());setTimeout(()=>renderPessoaChips('f-pessoa-chips',null),50);}
+function _popularCategoriaTx(selectedId){
+  budgetAll().then(function(budgets){
+    var sel=document.getElementById('f-categoria');
+    if(!sel)return;
+    var filtered=budgets.filter(function(b){return b.categoriaKey;});
+    var sorted=filtered.slice().sort(function(a,b){return(a.name||'').localeCompare(b.name||'');});
+    var opts='<option value="">— Sem categoria —</option>';
+    for(var i=0;i<sorted.length;i++){
+      var b=sorted[i];
+      var sel2=selectedId&&b.id===selectedId?'selected':'';
+      opts+='<option value="'+b.id+'" '+sel2+'>'+b.name+'</option>';
+    }
+    sel.innerHTML=opts;
+  }).catch(function(){});
+}
+function showAddModal(){
+  openModal(entryFormHtml());
+  setTimeout(function(){
+    renderPessoaChips('f-pessoa-chips',null);
+    _popularCategoriaTx(null);
+  },50);
+}
 function showEditModal(id){dbAll().then(all=>{
   const t=all.find(x=>x.id===id);
   if(!t)return;
@@ -148,6 +173,7 @@ function showEditModal(id){dbAll().then(all=>{
       updateSubitemsTotal();
     }
     renderPessoaChips('f-pessoa-chips',t.pessoaId||null);
+    _popularCategoriaTx(t.categoriaId||null);
   },50);
 })}
 
@@ -322,13 +348,14 @@ function getFormValues(){
   const obs=document.getElementById('f-obs')?.value.trim()||'';
   const subitems=getRawSubitems();
   const pessoaId=getSelectedPessoa('f-pessoa-chips');
-  return{name,val,rawExpr,type,date,paidDate,month,year,obs,subitems,pessoaId};
+  const categoriaId=parseInt(document.getElementById('f-categoria')?.value)||null;
+  return{name,val,rawExpr,type,date,paidDate,month,year,obs,subitems,pessoaId,categoriaId};
 }
 
 async function saveEntry(){
 
   try{
-    const{name,val,rawExpr,type,date,paidDate,month,year,obs,subitems,pessoaId}=getFormValues();
+    const{name,val,rawExpr,type,date,paidDate,month,year,obs,subitems,pessoaId,categoriaId}=getFormValues();
     if(!name){setFieldError('f-name','Informe o nome');return}
       if(!val||isNaN(val)||val<=0){setFieldError('f-val','Informe um valor válido');return}
     // item com subitems que tem repeat: salva 1 registro com subitems raw
@@ -336,12 +363,12 @@ async function saveEntry(){
     const hasSubRepeat=rawSubs.some(s=>s.repeat>0);
     if(hasSubRepeat){
       await dbAdd({name,value:val,rawExpr,type,month,year,ym:ym(year,month),date,paidDate,obs,
-        subitems:rawSubs,pessoaId,
+        subitems:rawSubs,pessoaId,categoriaId,
         subRepeatStart:{month,year},
         createdAt:Date.now()});
       toast('Lançamento salvo!');
     }else{
-      await dbAdd({name,value:val,rawExpr,type,month,year,ym:ym(year,month),date,paidDate,obs,subitems,pessoaId,createdAt:Date.now()});
+      await dbAdd({name,value:val,rawExpr,type,month,year,ym:ym(year,month),date,paidDate,obs,subitems,pessoaId,categoriaId,createdAt:Date.now()});
       toast('Lançamento salvo!');
     }
     closeModal();renderAll();
@@ -355,7 +382,7 @@ async function saveEntry(){
 async function updateEntry(id){
 
   try{
-    const{name,val,rawExpr,type,date,paidDate,month,year,obs,subitems,pessoaId}=getFormValues();
+    const{name,val,rawExpr,type,date,paidDate,month,year,obs,subitems,pessoaId,categoriaId}=getFormValues();
     if(!name){setFieldError('f-name','Informe o nome');return}
       if(!val||isNaN(val)||val<=0){setFieldError('f-val','Informe um valor válido');return}
     const all=await dbAll();
@@ -369,12 +396,12 @@ async function updateEntry(id){
       if(futureInGroup.length>0){
         closeModal();
         showConfirm('Editar lançamento','Este lançamento faz parte de uma série. O que deseja atualizar?',[
-          {label:'Apenas este período',cls:'btn-ghost',action:async()=>{await dbPut({...existing,name,value:val,rawExpr,type,date,paidDate,month,year,ym:ym(year,month),obs,subitems,pessoaId});toast('Lançamento atualizado!','var(--green)');renderAll()}},
+          {label:'Apenas este período',cls:'btn-ghost',action:async()=>{await dbPut({...existing,name,value:val,rawExpr,type,date,paidDate,month,year,ym:ym(year,month),obs,subitems,pessoaId,categoriaId});toast('Lançamento atualizado!','var(--green)');renderAll()}},
           {label:'Este e todos os seguintes',cls:'btn-primary',action:async()=>{
             const toUpdate=[existing,...futureInGroup].sort((a,b)=>ym(a.year,a.month)-ym(b.year,b.month));
             let m=month,y=year,d=date;
             for(const x of toUpdate){
-              await dbPut({...x,name,value:val,rawExpr,type,month:m,year:y,ym:ym(y,m),date:d,paidDate,obs,subitems,pessoaId});
+              await dbPut({...x,name,value:val,rawExpr,type,month:m,year:y,ym:ym(y,m),date:d,paidDate,obs,subitems,pessoaId,categoriaId});
               if(d){const nd=addMonths(d,1);if(nd)d=nd;}m++;if(m>11){m=0;y++}
             }
             toast('Série atualizada!','var(--green)');renderAll();
@@ -384,7 +411,7 @@ async function updateEntry(id){
         return;
       }
     }
-    await dbPut({...existing,name,value:val,rawExpr,type,date,paidDate,month,year,ym:ym(year,month),obs,subitems,pessoaId});
+    await dbPut({...existing,name,value:val,rawExpr,type,date,paidDate,month,year,ym:ym(year,month),obs,subitems,pessoaId,categoriaId});
     toast('Lançamento atualizado!','var(--green)');
     closeModal();renderAll();
 

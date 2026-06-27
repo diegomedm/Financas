@@ -1,41 +1,26 @@
 # Estado Atual do Projeto
 
 **Atualizado em:** 2026-06-27
-**Agente:** Senior Software Engineer
-**Sessão:** Sprint 4b — categorias orçadas de cartão — implementação e correção de bugs
+**Agente:** QA Engineer
+**Sessão:** Verificação estática completa da Sprint 5 — veredicto LIBERADO
 
-## Em andamento
+## O que está em andamento
 
-- Sprint 4b implementado e em validação manual no browser pelo usuário
-- Erro de carregamento da aba Cartão corrigido (guard `db.objectStoreNames.contains` em `categoriasCartaoAll`)
-- Usuário confirmou que cartões carregam agora — validando funcionalidades
+- Verificação estática concluída: todos os 12 itens do checklist passaram (com uma observação menor sobre JSON.stringify legado em cards-render.js linha 158 — pré-existente, não introduzido pela Sprint 5)
+- Smoke test manual pendente: o usuário deve executar os 8 cenários no browser antes do commit
 
 ## Próximo passo esperado
 
-- Usuário testar os pontos principais do Sprint 4b:
-  1. Criar/editar/excluir categoria na seção "Categorias Orçadas"
-  2. Vincular gasto a categoria no modal de gasto
-  3. Seção "Por Categoria" na fatura (realizado vs orçado + barra)
-  4. Projeção considera delta de categoria
-  5. Editar recorrente (fix do bug pré-existente confirmado)
-- Após validação: commitar e seguir para Sprint 5 (onboarding)
+- Usuário executa o plano de smoke test manual (ST-01 a ST-08) no browser
+- Após aprovação de todos os cenários: commit e archive da spec `sprint-5-categorias-budget.md`
 
 ## Contexto crítico para não perder
 
-- Guard adicionada em `categoriasCartaoAll()` em `db.js`: se store não existe (banco ainda em v5), retorna `[]` sem lançar exceção — garante retrocompatibilidade enquanto SW não atualiza
-- SW bumpeado para v7 no commit anterior (1736244) — força recarga do db.js novo
-- IndexedDB versão 6 cria store `categoriasCartao` no upgrade
-- `saveRecorrenteEdit` bug pré-existente (DT-005) corrigido nesta sprint — declarações agora antes das validações
-- JSON.stringify em onclick linha 175 de cards-render.js é pré-existente — documentado e aceito
-
-## Roadmap
-
-| Sprint | Item | Status |
-|--------|------|--------|
-| 1 | Split cards.js | Concluído |
-| 2 | Simplificação TX + Dashboard | Concluído |
-| 3 | Gráficos no dashboard | Concluído |
-| 4 | Melhorias na projeção | Concluído |
-| 4b | Categorias orçadas de cartão | Em validação |
-| 5 | Onboarding | Pendente |
-| 6 | OFX/QFX importer | Pendente |
+- JSON.stringify em cards-render.js linha 158 é código legado (existia antes da Sprint 5) com mitigação .replace aplicada — não é bloqueante
+- calcCategoriaRealizado é função síncrona pura (recebe arrays, não chama stores internamente) — conforme especificado
+- renderBudget carrega gastosAll/dbAll/cartoesAll UMA VEZ antes do loop — conforme especificado
+- getCartaoBudgetItems não contém mais referências a catGlobalTotals ou allCatsProj — delta removido
+- #cg-categoria em cards-modal.js lê de budgetAll() — conforme especificado
+- #f-categoria existe em transactions.js — conforme especificado
+- saveBudgetItem e saveBudgetEdit incluem categoriaKey em todos os paths (mais de 15 ocorrências verificadas)
+- node --check passou em exit 0 nos 4 arquivos JS

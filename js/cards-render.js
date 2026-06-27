@@ -81,32 +81,15 @@ async function renderCards(){
     const allGastos=await gastosAll();
     const el=document.getElementById('cards-list');
     if(!el)return;
-    // Seção de gerenciamento de categorias no topo
-    const cats=await categoriasCartaoAll();
+    // Seção de categorias orçadas removida (Sprint 5) — ocultar o container
     const catsSection=document.getElementById('categorias-cartao-section');
-    if(catsSection){
-      let catsHtml='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'+
-        '<span style="font-size:13px;font-weight:600;color:var(--text2)">Categorias Orçadas</span>'+
-        '<button class="btn btn-ghost btn-sm" onclick="showAddCategoriaModal()">+ Categoria</button>'+
-        '</div>';
-      if(!cats.length){
-        catsHtml+='<div style="font-size:12px;color:var(--text3);margin-bottom:4px">Nenhuma categoria. Toque em + Categoria.</div>';
-      }else{
-        var sortedCats=cats.slice().sort(function(a,b){return(a.name||'').localeCompare(b.name||'');});
-        for(var ci=0;ci<sortedCats.length;ci++){
-          var cat=sortedCats[ci];
-          catsHtml+='<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px">'+
-            '<div style="flex:1;min-width:0">'+
-            '<span style="font-size:13px;font-weight:500;color:var(--text)">'+cat.name+'</span>'+
-            '<span style="font-size:11px;color:var(--text3);margin-left:8px">'+fmt(cat.valorOrcado)+'/mês</span>'+
-            '</div>'+
-            '<button class="tx-btn edit" onclick="showEditCategoriaModal('+cat.id+')">✏️</button>'+
-            '<button class="tx-btn del" onclick="deleteCategoria('+cat.id+')">✕</button>'+
-            '</div>';
-        }
-      }
-      catsSection.innerHTML=catsHtml;
-    }
+    if(catsSection){catsSection.innerHTML='';catsSection.style.display='none';}
+    // Carregar itens de budget com categoriaKey para a seção "Por Categoria"
+    var allBudgetCats=[];
+    try{
+      var allBuds=await budgetAll();
+      allBudgetCats=allBuds.filter(function(b){return b.categoriaKey;});
+    }catch(e){}
     if(!cartoes.length){
       el.innerHTML='<div class="empty"><div class="empty-icon">💳</div>Nenhum cartão cadastrado.<br>Toque em <strong>+ Cartão</strong> para começar.</div>';
       return;
@@ -218,15 +201,15 @@ async function renderCards(){
             '</div>';
         }).join(''):''}
         ${(()=>{
-          // Seção "Por Categoria" — calcula totais por categoria para este cartão/mês
-          if(!cats.length)return'';
+          // Seção "Por Categoria" — lê de budgetAll() filtrado por categoriaKey (Sprint 5)
+          if(!allBudgetCats.length)return'';
           // Mapear categoriaId -> totalRealizado para gastos deste cartão/mês
           var catTotals={};
           for(var gci=0;gci<gastosFatura.length;gci++){
             var gcat=gastosFatura[gci];
             if(!gcat.categoriaId)continue;
-            var catObj=cats.find(function(c){return c.id===gcat.categoriaId;});
-            if(!catObj)continue; // orphan — tratar como null
+            var budItem=allBudgetCats.find(function(b){return b.id===gcat.categoriaId;});
+            if(!budItem)continue; // orphan — ignorar silenciosamente
             catTotals[gcat.categoriaId]=(catTotals[gcat.categoriaId]||0)+gcat.value;
           }
           var catIds=Object.keys(catTotals);
@@ -235,16 +218,16 @@ async function renderCards(){
             '<div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">Por Categoria</div>';
           for(var ki=0;ki<catIds.length;ki++){
             var cid=parseInt(catIds[ki]);
-            var catItem=cats.find(function(c){return c.id===cid;});
-            if(!catItem)continue;
+            var budgetItem=allBudgetCats.find(function(b){return b.id===cid;});
+            if(!budgetItem)continue;
             var realizado=catTotals[cid];
-            var orcado=catItem.valorOrcado;
+            var orcado=budgetItem.value;
             var pct=orcado>0?realizado/orcado*100:0;
             var barColor=pct>=100?'var(--red)':pct>=80?'var(--amber)':'var(--green)';
             var barWidth=Math.min(100,pct);
             secHtml+='<div style="margin-bottom:10px">'+
               '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">'+
-              '<span style="font-size:12px;font-weight:500;color:var(--text)">'+catItem.name+'</span>'+
+              '<span style="font-size:12px;font-weight:500;color:var(--text)">'+budgetItem.name+'</span>'+
               '<span style="font-size:11px;color:'+barColor+';font-family:var(--mono)">'+fmt(realizado)+' / '+fmt(orcado)+'</span>'+
               '</div>'+
               '<div style="height:4px;background:var(--bg4);border-radius:2px;overflow:hidden">'+
@@ -325,56 +308,6 @@ async function getCartaoBudgetItems(targetMonth, targetYear){
       faturaMonth: tm,
       faturaYear: ty,
     });
-  }
-
-  // Delta de projeção por categoria — calculado globalmente (todos os cartões)
-  // Para cada categoria: delta = max(0, valorOrcado - totalRealizadoGlobal)
-  // totalRealizadoGlobal = soma de gastos do mês alvo com categoriaId em TODOS os cartões
-  const allCatsProj = await categoriasCartaoAll();
-  if(allCatsProj.length && result.length){
-    // Pre-computar totais globais por categoriaId para o mês alvo
-    var catGlobalTotals = {};
-    for(var agi=0; agi<allGastos.length; agi++){
-      var gp = allGastos[agi];
-      if(!gp.categoriaId) continue;
-      // Encontrar o cartão do gasto para calcular a fatura correta
-      var gpCartao = cartoes.find(function(c){return c.id===gp.cartaoId;});
-      if(!gpCartao) continue;
-      var gpFm = getFaturaMonth(gp.date, gpCartao);
-      var gpInMonth = false;
-      if(gpFm && gpFm.month===tm && gpFm.year===ty){
-        gpInMonth = true;
-      } else if(gp.subRepeatStart && gp.subitems && gp.subitems.length){
-        var gpActiveSubs = getActiveSubitems(gp.subitems, gp.subRepeatStart.month, gp.subRepeatStart.year, tm, ty);
-        gpInMonth = gpActiveSubs.length > 0;
-      }
-      if(!gpInMonth) continue;
-      var gpRes = gastoValueForFatura(gp, tm, ty);
-      if(!gpRes) continue;
-      catGlobalTotals[gp.categoriaId] = (catGlobalTotals[gp.categoriaId]||0) + gpRes.value;
-    }
-
-    // Calcular delta por categoria e somar ao cartão correto
-    for(var catpi=0; catpi<allCatsProj.length; catpi++){
-      var catP = allCatsProj[catpi];
-      var totalRealGlobal = catGlobalTotals[catP.id] || 0;
-      var delta = Math.max(0, catP.valorOrcado - totalRealGlobal);
-      if(delta <= 0) continue;
-
-      // Encontrar cartão do result com maior realizado desta categoria
-      // (usar o primeiro cartão disponível se nenhum tiver gasto desta categoria)
-      var bestIdx = 0;
-      var bestVal = -1;
-      for(var ri=0; ri<result.length; ri++){
-        var rGastos = result[ri]._gastos || [];
-        var catSum = 0;
-        for(var rgi=0; rgi<rGastos.length; rgi++){
-          if(rGastos[rgi].categoriaId === catP.id) catSum += rGastos[rgi].value || 0;
-        }
-        if(catSum > bestVal){ bestVal = catSum; bestIdx = ri; }
-      }
-      result[bestIdx].value += delta;
-    }
   }
 
   return result.filter(r=>r.value>0);

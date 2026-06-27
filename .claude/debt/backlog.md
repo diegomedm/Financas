@@ -61,3 +61,24 @@
 - **Impacto:** Baixo — projeção não considera budget nem cartões, apenas TX passados
 - **Proposta:** Enriquecer com dados de orçamento para projeção mais precisa
 - **Status:** Não priorizado
+
+---
+
+## Débitos identificados em 2026-06-27 — Code Review Sprint 5
+
+### [DT-009] Funções legadas de categoria não removidas de cards-modal.js
+- **Arquivo:** `js/cards-modal.js` — funções `showAddCategoriaModal`, `showEditCategoriaModal`, `saveCategoria`, `saveEditCategoria`, `deleteCategoria` (~linhas 652–762)
+- **Descrição:** As cinco funções de gerenciamento de categorias da Sprint 4b continuam presentes em cards-modal.js. Nenhuma delas é chamada por nenhum ponto do HTML ou de outros JS após a Sprint 5. São código morto que mantém dependência de `categoriasCartaoAll/Add/Put/Del` e cria risco de chamada acidental.
+- **Impacto:** Baixo — sem efeito funcional; risco de confusão de manutenção
+- **Proposta:** Remover as cinco funções em próxima sprint de limpeza, após confirmar que não há referências residuais no HTML
+- **Introduzido em:** Sprint 4b — sobreviveu à Sprint 5 (escopo da Sprint 5 previa remoção, mas não foi executada)
+- **Identificado em:** Code Review Sprint 5 (2026-06-27)
+- **Status:** Não corrigido — registrado para próxima sprint de limpeza
+
+### [DT-010] calcCategoriaRealizado silencia gastos de categoria sem cartão encontrado
+- **Arquivo:** `js/budget.js` — função `calcCategoriaRealizado` (~linha 815)
+- **Descrição:** Se um gasto tem `categoriaId` correto mas `g.cartaoId` não existe no array `cartoes` (cartão deletado), o gasto é silenciosamente ignorado (`if(!gc)continue`). O usuário verá realizado menor que o real sem nenhum aviso.
+- **Impacto:** Baixo — afeta apenas gastos cujo cartão foi deletado mas o gasto permanece órfão na store
+- **Proposta:** Logar `console.warn` para facilitar debug; ou somar o gasto pelo `g.value` bruto quando cartão não for encontrado
+- **Identificado em:** Code Review Sprint 5 (2026-06-27)
+- **Status:** Não corrigido
