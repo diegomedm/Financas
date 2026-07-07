@@ -1,36 +1,38 @@
 # Estado Atual do Projeto
 
-**Atualizado em:** 2026-06-27
-**Agente:** Senior Dev
-**Sessão:** Encerramento — documentação de roadmap e próximos passos
+**Atualizado em:** 2026-07-07
+**Agente:** Senior Software Engineer
+**Sessão:** Implementação da Fase 0 — Fundação Visual
 
-## O que foi feito nesta sessão
+## O que está em andamento
 
-- Botão 📌 (mês de referência) em todas as 5 abas, dentro do month-nav, com visibility:hidden
-- Categorias orçadas (`isCategoriaOnly`) ocultas da lista normal de orçamento
-- Saldo restante das categorias entra na projeção (a partir do refMonth)
-- Resumo de orçamento: realizado e total de despesas incluem contribuição das categorias
-- Estrutura .claude atualizada: architecture.md (v6), backlog, specs arquivadas
-- SW v10
-
-## Roadmap priorizado (próximas sessões)
-
-1. **Revisão completa de UX/UI** — antes de qualquer nova feature. Usar Claude Design (quando disponível). Não iniciar sem o usuário confirmar que está pronto para essa etapa.
-2. **Onboarding** — fluxo para novo usuário (primeira abertura sem dados)
-3. **OFX/QFX importer** — importar extratos do Nubank; uma das últimas features
+- Spec `.claude/specs/fase0-fundacao-visual.md` **implementada** conforme as 4 fases recomendadas (A→D,
+  exceto o smoke test manual em browser, que é passo do usuário/QA)
+- `node --check` passou em `js/theme.js`, `js/app.js` e `sw.js`
+- Nenhum commit realizado — aguardando revisão/aprovação do usuário
 
 ## Próximo passo esperado
 
-- Na próxima sessão: acionar Discovery Agent para planejar a revisão de UX/UI
-- Não implementar nada antes de o usuário confirmar qual item do roadmap quer atacar
+- Usuário roda o smoke test manual de 8 passos descrito na spec (seção "Smoke test manual obrigatório")
+- Code Reviewer revisa o diff (foco: FOUC, dessincronização de chaves localStorage, zero regressão)
+- QA Engineer valida os 10 itens INTOCÁVEIS
+- Após aprovação explícita do usuário → commit
 
 ## Contexto crítico para não perder
 
-- `isCategoriaOnly:true` + `categoriaKey` = categoria pura (store `budget`)
-- `calcCategoriaRealizado(id, gastos[], tx[], cartoes[], month, year)` — síncrona
-- Projeção e resumo: saldo restante = max(0, orçado - realizado); meses < refMonth ignorados
-- `refMonth/refYear` em localStorage — mês de referência persistido
-- SW cache: `financas-v10` — IndexedDB: `financas_pwa_v2` v6 (8 stores)
-- Módulos JS: globals → db → utils → pessoas → transactions → cards-modal → cards-render → budget → projection → config → app
-- Restrições obrigatórias: sem export/import ES6, sem script type=module, sem nested template literals, sem JSON.stringify em onclick, node --check após todo JS
-- Débitos técnicos abertos: DT-001 (cards muito grande), DT-002 (CSS inline), DT-003 (sem testes), DT-005 (saveRecorrenteEdit), DT-006 (cache budgetDone), DT-009 (funções legadas cards-modal), DT-010 (gasto órfão silenciado)
+- `js/theme.js` (novo) implementa `buildTokens(theme, mood, surface, accent)`, `applyLook(look)` e
+  `getSavedLook()` — valores dark/light extraídos 1:1 de `index.html` (`:root`/`body.light`), sem alterar
+  nenhuma variável CSS existente
+- `applyTheme(dark)` foi removida de `js/app.js` (sem alias) — `toggleTheme(dark)` agora delega para
+  `applyLook()`, lendo `getSavedLook()` e trocando apenas `theme`
+- `init()` em `js/app.js` agora chama `applyLook(getSavedLook())` na mesma posição síncrona onde antes
+  chamava `applyTheme(...)` — antes de `openDB()`, sem inline script no `<head>`
+- `index.html`: `<script src="js/theme.js">` inserido entre `projection.js` e `config.js`;
+  `:root`/`body.light` não foram tocados
+- `sw.js`: `CACHE` bump `financas-v10` → `financas-v11`; `js/theme.js` adicionado em `urlsToCache` na
+  mesma posição relativa
+- RN-04 (fórmula de derivação de `--blue-bg`/`--blue-border` a partir de accent customizado): não
+  implementada nesta fase, conforme decisão do Tech Lead — accent customizado troca apenas `--blue`,
+  mantendo `--blue-bg`/`--blue-border` do tema base como estão hoje
+- Débitos técnicos abertos (sem mudança): DT-001, DT-002, DT-003, DT-005, DT-006, DT-009 (já resolvido
+  em sessão anterior), DT-010 (já resolvido em sessão anterior)

@@ -22,14 +22,11 @@ if('serviceWorker' in navigator){
     }).catch(e=>console.warn('[SW]',e));
 }
 
-function applyTheme(dark){
-  document.body.classList.toggle('light',!dark);
-  document.getElementById('meta-theme').content=dark?'#0d0f1a':'#f5f6fa';
-  localStorage.setItem('theme',dark?'dark':'light');
-  const tog=document.getElementById('toggle-dark');
-  if(tog)tog.checked=dark;
+function toggleTheme(dark){
+  var look=getSavedLook();
+  look.theme=dark?'dark':'light';
+  applyLook(look);
 }
-function toggleTheme(dark){applyTheme(dark)}
 
 function showPageCfg(){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -100,7 +97,7 @@ async function renderAll(){
 
 async function init(){
   try{
-    applyTheme((localStorage.getItem('theme')||'dark')==='dark');
+    applyLook(getSavedLook());
     db=await openDB();
     updateMonthLabels();
     await renderPersonFilterBars();

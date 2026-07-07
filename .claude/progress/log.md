@@ -4,6 +4,36 @@
 
 ---
 
+**2026-07-07 — Senior Dev**
+- Feito: implementação completa da Fase 0 (Fundação Visual) conforme `.claude/specs/fase0-fundacao-visual.md` — `js/theme.js` criado (`buildTokens`, `applyLook`, `getSavedLook`); `applyTheme`/`toggleTheme` em `js/app.js` unificados via `applyLook` (RN-08/RN-09), `init()` lê `getSavedLook()` (RN-10); `index.html` com `<script src="js/theme.js">` entre `projection.js` e `config.js`; `sw.js` bump `financas-v10`→`financas-v11` com `js/theme.js` em `urlsToCache`
+- Decisões: seguidas as 3 decisões já validadas pelo Tech Lead na sessão anterior — `applyTheme` removida sem alias; `applyLook` chamada na mesma posição síncrona de `init()`; fórmula de accent customizado não implementada (accent troca apenas `--blue`, `--blue-bg`/`--blue-border` seguem hardcoded)
+- Artefatos: `js/theme.js` (novo), `js/app.js`, `index.html`, `sw.js` — `node --check` passou em `theme.js`, `app.js` e `sw.js`
+- Pendências: smoke test manual do usuário (8 passos da spec), Code Reviewer, QA Engineer, e commit aguardando aprovação explícita do usuário
+
+---
+
+**2026-07-07 — Tech Lead**
+- Feito: validação técnica dos 3 pontos abertos da spec Fase 0 (`fase0-fundacao-visual.md`), com leitura de `js/app.js` (linhas 1-111) e `index.html` (`:root`/`body.light`)
+- Decisões: (1) `applyTheme` removida sem alias, confirmado via `grep -rn "applyTheme"` (só 2 chamadas internas); (2) chamar `applyLook` na mesma posição síncrona atual de `applyTheme` em `init()` é suficiente para evitar FOUC — sem inline script no `<head>`, pois `:root`/`body.light` já cobrem o primeiro paint; (3) fórmula de derivação de accent customizado adiada para a Fase 1, não implementar nesta fase
+- Artefatos: `.claude/specs/fase0-fundacao-visual.md` (seção "Pontos abertos" atualizada com decisões), `.claude/progress/current.md` (atualizado)
+- Pendências: nenhuma — spec aprovada para o Senior Dev implementar
+
+---
+
+**2026-07-07 — Product Owner**
+- Feito: leitura de `architecture.md` e `plan-fase0-fundacao-visual.md` (plano aprovado); escrita da spec detalhada da Fase 0 seguindo o formato padrão do projeto (ver `sprint-5-categorias-budget.md` como referência de formato)
+- Decisões: 14 regras de negócio numeradas (RN-01 a RN-14) cobrindo composição de tokens, persistência dupla (`financas-look` + `theme` sincronizadas), unificação de `toggleTheme`/`applyLook`, e compatibilidade retroativa via fallback; 6 user stories com critérios de aceite em BDD, incluindo Story 5 dedicada a validar os 10 itens INTOCÁVEIS sem regressão
+- Artefatos: `.claude/specs/fase0-fundacao-visual.md` (criado), `.claude/progress/current.md` (atualizado)
+- Pendências: 3 pontos sinalizados para validação do Tech Lead antes/durante a implementação (remoção vs. alias de `applyTheme`; estratégia de mitigação de FOUC; confirmação de que fórmula de derivação de accent customizado não é necessária nesta fase). Nada implementado — próximo passo é o Senior Dev, após validação do Tech Lead
+---
+
+**2026-07-07 — Discovery Agent**
+- Feito: leitura do handoff de design (README.md, ROADMAP.md, trechos de `Financas App.dc.html`) em `CLAUDE DESIGN - App Finanças`; inventário dos 10 itens INTOCÁVEIS cruzados contra código real (`js/*.js`, `index.html`) — todos confirmados, sem gaps; elaboração do plano da Fase 0 (Fundação Visual: tokens de tema, accent configurável, persistência)
+- Decisões: classificado como N2 MVP; recomendado `js/theme.js` novo (não estender `config.js`); recomendado unificar `toggleTheme()` com nova função `applyLook()` já na Fase 0 para evitar dessincronização de chaves localStorage; Fase 0 não renomeia nenhuma CSS var existente, apenas compõe por cima; UI de seleção de aparência fica para a Fase 1
+- Artefatos: `.claude/discovery/plan-fase0-fundacao-visual.md` (criado), `.claude/progress/current.md` (atualizado)
+- Pendências: aprovação do usuário sobre o plano da Fase 0; 3 perguntas em aberto no plano (arquivo novo vs. estender config.js; unificação do toggle já na Fase 0; divergência de `--border` entre app real e README do handoff)
+---
+
 **2026-06-27 — Encerramento de sessão**
 - Feito: melhorias pós-Sprint 5 entregues e em produção; .claude atualizado (architecture, backlog, archive); roadmap documentado
 - Decisões: ordem do roadmap definida — UX/UI review → Onboarding → OFX/QFX importer; Claude Design será usado na etapa de UX/UI (quando disponível)
