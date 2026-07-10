@@ -145,11 +145,15 @@ async function deleteCartao(id){
 function showAddGastoModal(cartaoId, cartao, gasto=null){
   const isEdit=!!gasto;
   openModal(`
-    <div class="modal-title">${isEdit?'✏️ Editar gasto':'Novo gasto — '+cartao.name}</div>
+    <div class="modal-title">${isEdit?'✏️ Editar gasto':'Novo gasto'}</div>
     <div class="form-group">
       <label>Descrição</label>
       <input id="cg-name" placeholder="Ex: Supermercado, Restaurante..." value="${isEdit?gasto.name.replace(/"/g,'&quot;'):''}" oninput="clearFieldError('cg-name')">
     <div class="field-error-msg" id="cg-name-err"></div>
+    </div>
+    <div class="form-group">
+      <label>Cartão</label>
+      <div id="cg-cartao-picker" style="display:flex;gap:6px;flex-wrap:wrap"></div>
     </div>
     <div class="form-group">
       <label>Valor</label>
@@ -206,10 +210,12 @@ function showAddGastoModal(cartaoId, cartao, gasto=null){
     <input type="hidden" id="cg-cartao-id" value="${cartaoId}">
     <div class="btn-row" style="margin-top:4px">
       <button class="btn btn-primary" style="flex:1" onclick="${isEdit?'saveGastoEdit('+gasto.id+')':'saveGasto()'}">Salvar</button>
+      ${isEdit?`<button class="btn btn-ghost" style="color:var(--red)" onclick="deleteGasto(${gasto.id})">Excluir</button>`:''}
       <button class="btn btn-ghost" style="flex:1" onclick="closeModal()">Cancelar</button>
     </div>`);
   setTimeout(()=>{
     updateFaturaPreview(cartao);
+    renderGastoCartaoPicker(cartaoId);
     // Popular select de categoria — lê de budgetAll() filtrado por categoriaKey (Sprint 5)
     budgetAll().then(function(budgets){
       var sel=document.getElementById('cg-categoria');
@@ -261,6 +267,31 @@ function showAddGastoModal(cartaoId, cartao, gasto=null){
       });
     }
   },50);
+}
+
+/* Seletor de cartão no modal de gasto — pills coloridas por cartão (fiel a cartaoPickerOptions
+   do protótipo). Necessário porque openGastoFab() (atalho do FAB) sempre abria o modal fixado no
+   primeiro cartão cadastrado, sem opção de trocar. */
+async function renderGastoCartaoPicker(selectedId){
+  const el=document.getElementById('cg-cartao-picker');
+  if(!el)return;
+  const cartoes=await cartoesAll();
+  el.innerHTML=cartoes.map(function(ct){
+    const active=ct.id===selectedId;
+    const style=active
+      ?'display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:20px;background:var(--blue-bg);border:1.5px solid var(--blue);color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap'
+      :'display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:20px;background:transparent;border:1px solid var(--border2);color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap';
+    return'<button type="button" class="cg-cartao-pill" onclick="selectGastoCartao('+ct.id+')" style="'+style+'">'
+      +'<span style="width:8px;height:8px;border-radius:3px;background:'+ct.color+';flex-shrink:0"></span>'
+      +ct.name+'</button>';
+  }).join('');
+}
+
+async function selectGastoCartao(cartaoId){
+  const hidden=document.getElementById('cg-cartao-id');
+  if(hidden)hidden.value=cartaoId;
+  renderGastoCartaoPicker(cartaoId);
+  updateFaturaPreview();
 }
 
 async function updateFaturaPreview(cartaoObj){
@@ -442,7 +473,12 @@ async function saveGasto(){
     const pnum=parseInt(document.getElementById('cg-pnum')?.value)||1;
     const ptotal=parseInt(document.getElementById('cg-ptotal')?.value)||1;
     const allCartoes=await cartoesAll();
-    const cartaoObj=allCartoes.find(c=>c.id===cartaoId)||{fechamento:1,vencimento:1};
+    const cartaoObj=allCartoes.find(c=>c.id===cartaoId);
+    if(!cartaoObj){
+      toast('Cartão selecionado não existe mais — escolha outro','var(--red)');
+      renderGastoCartaoPicker(null);
+      return;
+    }
     if(parcelado&&ptotal>1){
       if(pnum>ptotal){setFieldError('cg-pnum','Parcela atual maior que o total');return;}
       let d=date;
@@ -488,12 +524,18 @@ async function saveGastoEdit(id){
     const pnum=parseInt(document.getElementById('cg-pnum')?.value)||1;
     const ptotal=parseInt(document.getElementById('cg-ptotal')?.value)||1;
     const categoriaId=parseInt(document.getElementById('cg-categoria')?.value)||null;
+    const cartaoIdSel=parseInt(document.getElementById('cg-cartao-id')?.value)||null;
     const all=await gastosAll();
     const existing=all.find(g=>g.id===id);
     if(!existing)return;
     const allCartoesEdit=await cartoesAll();
-    const cartaoEdit=allCartoesEdit.find(c=>c.id===existing.cartaoId)||{fechamento:1,vencimento:1};
-    // If has groupId (series), offer to update this + following
+    const cartaoEdit=allCartoesEdit.find(c=>c.id===(cartaoIdSel||existing.cartaoId));
+    if(!cartaoEdit){
+      toast('Cartão selecionado não existe mais — escolha outro','var(--red)');
+      renderGastoCartaoPicker(cartaoIdSel||existing.cartaoId);
+      return;
+    }
+    // If has groupId (série), offer to update this + following
     if(existing.groupId){
       const future=all.filter(g=>g.groupId===existing.groupId&&
         (g.date||'')>=(existing.date||'')&&g.id!==existing.id);
@@ -502,6 +544,7 @@ async function saveGastoEdit(id){
         showConfirm('Editar gasto parcelado','Este gasto faz parte de uma série de parcelas.',[
           {label:'Apenas esta parcela',cls:'btn-ghost',action:async()=>{
             await gastosPut({...existing,name,value:val,rawExpr:cgRawExpr,date,obs,categoriaId,
+              cartaoId:cartaoIdSel||existing.cartaoId,
               parcela:parcelado?pnum:existing.parcela,
               totalParcelas:parcelado?ptotal:existing.totalParcelas});
             toast('Parcela atualizada!');renderCards();refreshBudgetCartoes();
@@ -520,7 +563,7 @@ async function saveGastoEdit(id){
             for(let i=0;i<remaining;i++){
               const label=baseName+' '+(startParcela+i)+'/'+(newTotal||remaining);
               await gastosAdd({name:label,value:val,rawExpr:cgRawExpr,date:d,obs,categoriaId,
-                cartaoId:existing.cartaoId,parcela:startParcela+i,
+                cartaoId:cartaoIdSel||existing.cartaoId,parcela:startParcela+i,
                 totalParcelas:newTotal||remaining,groupId:newGroupId,createdAt:Date.now()});
               const nd=addMonths(d,1);if(nd)d=nd;
             }
@@ -575,6 +618,7 @@ async function saveGastoEdit(id){
     const activeNow=srs2?getActiveSubitems(finalGsubs,srs2.month,srs2.year,curMonth,curYear):finalGsubs;
     const gval2=activeNow.length?activeNow.reduce((t,s)=>t+s.value,0):val;
     await gastosPut({...existing,name,value:gval2,rawExpr:cgRawExpr,date,obs,categoriaId,
+      cartaoId:cartaoIdSel||existing.cartaoId,
       subitems:finalGsubs.length?finalGsubs:undefined,
       subRepeatStart:srs2||existing.subRepeatStart||undefined,
       parcela:parcelado?pnum:existing.parcela||null,
@@ -612,9 +656,13 @@ async function deleteGasto(id){
         return;
       }
     }
-    if(!confirm('Remover este gasto?'))return;
-    await gastosDel(id);toast('Gasto removido','var(--red)');
-    renderCards();refreshBudgetCartoes();
+    showConfirm('Remover gasto','Tem certeza que deseja remover "'+item.name+'"?',[
+      {label:'Remover',cls:'btn-danger',action:async()=>{
+        await gastosDel(id);toast('Gasto removido','var(--red)');
+        renderCards();refreshBudgetCartoes();
+      }},
+      {label:'Cancelar',cls:'btn-ghost',action:()=>{}}
+    ]);
 
   }catch(e){
     console.error('[deleteGasto]',e);
@@ -676,6 +724,7 @@ function showAddRecorrenteModal(cartaoId, recorrente){
     <input type="hidden" id="cr-cartao-id" value="${cartaoId}">
     <div class="btn-row" style="margin-top:4px">
       <button class="btn btn-primary" style="flex:1" onclick="">${isEdit?'Salvar':'Adicionar'}</button>
+      ${isEdit?`<button class="btn btn-ghost" style="color:var(--red)" onclick="deleteRecorrente(${r.id})">Excluir</button>`:''}
       <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
     </div>`);
   setTimeout(()=>{

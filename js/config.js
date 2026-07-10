@@ -214,4 +214,11 @@ function renderCfg(){
   const tog=document.getElementById('toggle-dark');
   if(tog)tog.checked=!document.body.classList.contains('light');
   renderPessoasConfig();
+  renderAppearanceCfg();
+  // FASE 5 — C10: preencher input do limite de gasto livre com valor salvo
+  const limiteInp=document.getElementById('input-limite-variavel');
+  if(limiteInp&&typeof getLimiteVariavel==='function'){
+    const v=getLimiteVariavel();
+    limiteInp.value=v>0?String(v):'';
+  }
 }

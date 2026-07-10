@@ -24,6 +24,7 @@
   --purple:#a78bfa;--purple-bg:#1a0d3d;--purple-border:#2a1a4a;
   --teal:#2dd4bf;--teal-bg:#0d2e2a;--teal-border:#1a4a44;
   --nav-bg:rgba(13,15,26,.96);
+  --hero-bg:linear-gradient(160deg,#5b8eff22 0%,#151829 70%);--hero-border:#5b8eff55;
   --radius:14px;--radius-sm:9px;
   --font:'DM Sans',system-ui,sans-serif;--mono:'DM Mono',monospace;
 }
@@ -38,14 +39,17 @@ body.light{
   --purple:#6d3fdc;--purple-bg:#f0ebff;--purple-border:#c8b0f8;
   --teal:#0e9e8c;--teal-bg:#e8faf8;--teal-border:#b0e0da;
   --nav-bg:rgba(245,246,250,.96);
+  --hero-bg:linear-gradient(160deg,#2962e833 0%,#f0f1f8 70%);--hero-border:#2962e888;
 }
-html,body{background:var(--bg);color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiased;transition:background .25s,color .25s}
-body{min-height:100vh;padding-bottom:76px}
+html,body{background:var(--bg);color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiased;transition:background .25s,color .25s;overflow-x:hidden}
+body{min-height:100vh}
 ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.ph-scroll{scrollbar-width:none;-ms-overflow-style:none}
+.ph-scroll::-webkit-scrollbar{width:0;height:0}
 
 /* PESSOAS */
 .person-avatar{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;text-transform:uppercase}
-.person-tag{display:inline-flex;align-items:center;gap:5px;padding:2px 8px 2px 4px;border-radius:20px;font-size:11px;font-weight:500;background:var(--bg4);border:1px solid var(--border)}
+.person-tag{display:inline-flex;align-items:center;gap:4px;padding:1px 7px 1px 2px;border-radius:20px;font-size:10px;font-weight:500;background:var(--bg4);border:1px solid var(--border);color:var(--text2)}
 .person-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 5px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:2px solid transparent;transition:all .2s;background:var(--bg3)}
 .person-chip.selected{border-color:currentColor}
 .person-list{display:flex;flex-direction:column;gap:8px;margin-top:4px}
@@ -55,10 +59,10 @@ body{min-height:100vh;padding-bottom:76px}
 .color-swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:border-color .15s;flex-shrink:0}
 .color-swatch.selected{border-color:var(--text)}
 /* PERSON FILTER BAR */
-#person-filter-bar-dash,#person-filter-bar-tx,#person-filter-bar-budget,#person-filter-bar-proj{display:flex;gap:6px;margin:12px 0;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+#person-filter-bar-dash,#person-filter-bar-tx,#person-filter-bar-cards,#person-filter-bar-budget,#person-filter-bar-proj{display:flex;gap:6px;margin:12px 0;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
 #person-filter-bar::-webkit-scrollbar{display:none}
-.person-filter-btn{padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;transition:all .2s;white-space:nowrap;font-family:var(--font);font-weight:500;display:inline-flex;align-items:center;gap:5px}
-.person-filter-btn.active{border-color:currentColor;font-weight:600}
+.person-filter-btn{font-family:var(--font);transition:color .2s,background .2s,border-color .2s,transform .12s}
+.person-filter-btn:active{transform:scale(.93)}
 
 
 /* ── CARTÕES ── */
@@ -85,16 +89,20 @@ body{min-height:100vh;padding-bottom:76px}
 /* NAV */
 #nav{position:fixed;bottom:0;left:0;right:0;background:var(--nav-bg);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom,0px)}
 body.cfg-open #nav{display:none}
+body.cfg-open #fab-root{display:none}
 body.cfg-open{padding-bottom:0}
 .nav-btn{flex:1;padding:10px 0;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;color:var(--text3);font-size:10px;font-family:var(--font);cursor:pointer;transition:color .2s}
 .nav-btn.active{color:var(--blue)}
+.nav-btn:active{transform:scale(.9)}
 .nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
 .nav-btn.active svg{transform:scale(1.1)}
 
 /* PAGES */
-.page{display:none;padding:20px 16px;animation:fadeIn .2s ease}
+.page{display:none;padding:20px 16px 90px;animation:fadeIn .2s ease}
 .page.active{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes screenInR{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+@keyframes screenInL{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:translateX(0)}}
 
 /* HEADER */
 .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
@@ -108,8 +116,58 @@ body.cfg-open{padding-bottom:0}
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;transition:background .25s,border-color .25s}
 .card-title{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:500;margin-bottom:12px}
 
+/* HERO SALDO */
+.hero-saldo{display:block;width:100%;text-align:left;border:1px solid var(--hero-border);background:var(--hero-bg);border-radius:20px;padding:18px;margin-bottom:12px;cursor:pointer;font-family:var(--font)}
+.hero-saldo-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.hero-saldo-label{font-size:12px;color:var(--text2);font-weight:500}
+.hero-saldo-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--green);background:var(--green-bg);border:1px solid var(--green-border);border-radius:20px;padding:3px 9px}
+.hero-saldo-badge.neg{color:var(--red);background:var(--red-bg);border-color:var(--red-border)}
+.hero-saldo-value{display:flex;font-size:38px;font-weight:600;font-family:var(--mono);line-height:1}
+.hero-saldo-value.green{color:var(--green)}.hero-saldo-value.red{color:var(--red)}
+.hero-saldo-footer{font-size:10px;color:var(--text3);margin-top:10px;padding-top:2px}
+
+/* DASH HEADER — pin de mês integrado ao label */
+.dash-month-pill{display:flex;align-items:center;height:34px;padding:0 4px;background:var(--bg3);border:1px solid var(--border);border-radius:10px}
+.dash-month-pill-btn{background:none;border:none;color:var(--text3);font-size:15px;cursor:pointer;padding:0 6px;transition:transform .1s,color .15s}
+.dash-month-pill-btn:active{transform:scale(.85);color:var(--text)}
+.dash-month-pill .month-label{display:inline-flex;align-items:center;justify-content:center;gap:3px;font-size:12px;font-weight:600;min-width:58px;color:var(--text);cursor:default;transition:color .2s,transform .1s;padding:0}
+.dash-month-pill .month-label.pinnable{color:var(--blue);cursor:pointer}
+.dash-month-pill .month-label:active{transform:scale(.92)}
+.dash-month-pill .month-label svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+
+/* DASH — entradas/saídas */
+.dash-inout-row{display:flex;justify-content:space-between;margin-bottom:12px}
+.dash-inout-label{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);font-weight:500;margin-bottom:4px}
+.dash-inout-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.dash-inout-val{font-size:17px;font-weight:600;font-family:var(--mono)}
+.dash-inout-bar{display:flex;height:8px;border-radius:5px;overflow:hidden;background:var(--bg4)}
+.dash-inout-caption{font-size:11px;color:var(--text3);margin-top:8px}
+
+/* DASH — donut de composição */
+.dash-donut{width:92px;height:92px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.dash-donut-hole{width:60px;height:60px;border-radius:50%;background:var(--bg2);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.dash-donut-hole-label{font-size:9px;color:var(--text3)}
+.dash-donut-hole-val{font-size:12px;font-weight:600;font-family:var(--mono);color:var(--text)}
+.dash-donut-legend-row{display:flex;align-items:center;gap:8px}
+.dash-donut-legend-row span:nth-child(2){flex:1;font-size:12px;color:var(--text2)}
+.dash-donut-legend-row span:nth-child(3){font-size:12px;color:var(--text3);font-family:var(--mono)}
+
+/* DASH — por responsável com barra */
+.dash-pessoa-row{margin-bottom:13px}
+.dash-pessoa-top{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.dash-pessoa-avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.dash-pessoa-bar{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.dash-pessoa-bar>div{height:100%;border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+/* DASH — histórico 6 meses (barras CSS) */
+.dash-hist-legend{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)}
+.dash-hist-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:5px}
+.dash-hist-bars{display:flex;align-items:flex-end;justify-content:center;gap:3px;width:100%;flex:1}
+.dash-hist-bar{width:9px;border-radius:3px;transform-origin:bottom;animation:barGrow .55s cubic-bezier(.34,1.56,.64,1) both}
+.dash-hist-label{font-size:10px;color:var(--text3)}
+
 /* SUMMARY */
-.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
 .stat-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:14px;transition:background .25s}
 .stat-label{font-size:11px;color:var(--text3);margin-bottom:6px;font-weight:500;letter-spacing:.3px;text-transform:uppercase}
 .stat-value{font-size:18px;font-weight:600;font-family:var(--mono);letter-spacing:-.5px}
@@ -123,9 +181,11 @@ body.cfg-open{padding-bottom:0}
 
 /* TX LIST */
 .tx-list{display:flex;flex-direction:column;gap:7px}
-.tx-item{display:flex;align-items:flex-start;gap:11px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 13px;transition:background .15s}
+.tx-item{display:flex;flex-wrap:wrap;width:100%;align-items:flex-start;gap:11px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 13px;transition:background .15s;box-sizing:border-box}
+.tx-item-full{width:100%}
 .tx-item:hover{background:var(--bg4)}
-.tx-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;margin-top:1px}
+.tx-icon{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tx-icon svg{width:18px;height:18px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .tx-icon.income{background:var(--green-bg);border:1px solid var(--green-border)}
 .tx-icon.fixed{background:var(--blue-bg);border:1px solid var(--blue-border)}
 .tx-icon.variable{background:var(--amber-bg);border:1px solid var(--amber-border)}
@@ -141,6 +201,52 @@ body.cfg-open{padding-bottom:0}
 .tx-actions{display:flex;gap:10px;margin-top:4px;justify-content:flex-end}
 .tx-btn{background:none;border:none;font-size:11px;cursor:pointer;padding:1px 0;font-family:var(--font);transition:color .15s}
 .tx-btn.edit{color:var(--blue)}.tx-btn.del{color:var(--text3)}.tx-btn.del:hover{color:var(--red)}
+
+/* SWIPE (Fase 2, seção 5) — botões de ação revelados por gesto horizontal */
+.swipe-action-btn{width:64px;border:none;color:#fff;font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;transition:filter .1s}
+.swipe-action-btn:active{filter:brightness(.82)}
+.tx-item{touch-action:pan-y}
+
+/* BUSCA EM LANÇAMENTOS (Fase 2, seção 2) */
+.tx-search-box{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:9px 12px;margin-bottom:10px}
+.tx-search-box svg{flex-shrink:0}
+.tx-search-box input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:13px;font-family:var(--font);min-width:0;padding:0}
+#tx-search-clear{background:var(--bg4);border:none;color:var(--text2);width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:12px;line-height:1;flex-shrink:0;transition:transform .1s;display:none;align-items:center;justify-content:center}
+#tx-search-clear:active{transform:scale(.85)}
+.tx-count-bar{display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:12px}
+.tx-count-bar #tx-count-label{font-size:12px;color:var(--text2)}
+.tx-count-bar #tx-count-balance{font-size:14px;font-weight:600;font-family:var(--mono)}
+
+/* FAB SPEED DIAL (Fase 2, seção 1) */
+#fab-root{position:fixed;inset:0;pointer-events:none;z-index:38}
+#fab-root>*{pointer-events:auto}
+.fab-main-btn:active{transform:scale(.88)}
+.fab-menu-btn:active{transform:scale(.95)}
+.report-link-card:active{transform:scale(.98)}
+.dash-alert-row:active{transform:scale(.98)}
+.tx-view-toggle-btn:active{transform:scale(.9)}
+.tx-cal-cell:active{transform:scale(.92)}
+.tx-cal-day-item:active{transform:scale(.98)}
+.proj-view-btn:active{transform:scale(.94)}
+.proj-daily-row:active{transform:scale(.98)}
+.tx-item:active,.budget-item:active{opacity:.85}
+.cat-open-detail:active{opacity:.75}
+.page-back-btn:active{transform:scale(.94);opacity:.7}
+.person-color-swatch:active{transform:scale(.82)}
+.appearance-opt-btn:active{transform:scale(.94)}
+.accent-swatch-btn:active{transform:scale(.88)}
+.cg-cartao-pill:active{transform:scale(.94)}
+.tour-action-btn:active{transform:scale(.96)}
+.cat-icon-btn:active{transform:scale(.88)}
+.goal-item-row:active{opacity:.8}
+.goal-add-btn:active{transform:scale(.9)}
+@keyframes fadeBg{from{opacity:0}to{opacity:1}}
+@keyframes popIn{0%{opacity:0;transform:scale(.9)}60%{opacity:1;transform:scale(1.02)}100%{transform:scale(1)}}
+@keyframes listItemIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* MODO PRIVACIDADE (Fase 2, seção 4) */
+.hide-values-btn-el{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;cursor:pointer;transition:transform .1s;background:none;border:none;padding:0}
+.hide-values-btn-el:active{transform:scale(.85)}
 
 /* BADGE */
 .badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:500}
@@ -167,7 +273,8 @@ select option{background:var(--bg3)}
 /* BUTTONS */
 .btn{padding:11px 18px;border-radius:var(--radius-sm);border:none;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;font-family:var(--font)}
 .btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{opacity:.88}.btn-primary:active{transform:scale(.97)}
-.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2)}.btn-ghost:hover{background:var(--bg4);color:var(--text)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2)}.btn-ghost:hover{background:var(--bg4);color:var(--text)}.btn-ghost:active{transform:scale(.94);background:var(--bg4)}
+.btn-danger:active{transform:scale(.94);background:var(--red-border)}
 .btn-danger{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
 .btn-teal{background:var(--teal-bg);color:var(--teal);border:1px solid var(--teal-border)}
 .btn-row{display:flex;gap:8px}
@@ -176,14 +283,15 @@ select option{background:var(--bg3)}
 /* TABS */
 .tabs{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
 .tabs::-webkit-scrollbar{display:none}
-.tab{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;transition:all .2s;white-space:nowrap;font-family:var(--font);font-weight:500}
+.tab{padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;transition:all .2s;white-space:nowrap;font-family:var(--font);font-weight:500}
 .tab.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.tab:active{transform:scale(.92)}
 
 /* MODAL */
 #modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:flex-end;backdrop-filter:blur(4px)}
 #modal-overlay.open{display:flex}
-#modal{background:var(--bg2);border-radius:20px 20px 0 0;border:1px solid var(--border);padding:20px 16px 36px;width:100%;max-height:92vh;overflow-y:auto;animation:slideUp .25s cubic-bezier(.4,0,.2,1)}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+#modal{background:var(--bg2);border-radius:20px 20px 0 0;border:1px solid var(--border);padding:20px 16px 36px;width:100%;max-height:92vh;overflow-y:auto;animation:slideUp .3s cubic-bezier(.4,0,.2,1)}
+@keyframes slideUp{0%{transform:translateY(100%)}62%{transform:translateY(-1.5%)}82%{transform:translateY(.5%)}100%{transform:translateY(0)}}
 .modal-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 16px}
 .modal-title{font-size:16px;font-weight:600;margin-bottom:18px;letter-spacing:-.2px}
 
@@ -195,25 +303,29 @@ select option{background:var(--bg3)}
 #numpad-display{background:var(--bg4);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:10px;font-family:var(--mono);font-size:20px;text-align:right;color:var(--text);min-height:50px;word-break:break-all;letter-spacing:.5px}
 #numpad-preview{font-size:12px;color:var(--green);text-align:right;margin-top:-6px;margin-bottom:8px;font-family:var(--mono);min-height:16px}
 .numpad-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.nk{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 6px;font-size:18px;font-weight:500;cursor:pointer;text-align:center;transition:background .1s;font-family:var(--mono);color:var(--text);user-select:none}
-.nk:active{background:var(--bg5)}
+.nk{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 6px;font-size:18px;font-weight:500;cursor:pointer;text-align:center;transition:transform .1s,filter .1s;font-family:var(--mono);color:var(--text);user-select:none}
+.nk:active{transform:scale(.9);filter:brightness(.85)}
 .nk.op{color:var(--blue);font-size:20px}
 .nk.del{color:var(--amber)}
 .nk.ok{background:var(--blue);color:#fff;font-size:15px;font-weight:600}
-.nk.ok:active{opacity:.85}
+.nk.ok:active{transform:scale(.95);filter:brightness(.9)}
 .nk.zero{grid-column:span 1}
 
 /* PROJ */
-.proj-header{display:grid;grid-template-columns:80px 1fr 1fr 1fr;font-size:11px;color:var(--text3);margin-bottom:8px;padding:0 13px;letter-spacing:.3px;text-transform:uppercase}
+.proj-header{display:grid;grid-template-columns:64px 1fr 1fr 1fr;font-size:10px;color:var(--text3);margin-bottom:10px;padding:0 4px;letter-spacing:.3px;text-transform:uppercase}
 .proj-header span{text-align:right}
 .proj-header span:first-child{text-align:left}
-.proj-row{display:grid;grid-template-columns:80px 1fr 1fr 1fr;align-items:center;padding:11px 13px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:7px}
-.proj-month-name{font-size:13px;font-weight:500}
-.proj-val{font-family:var(--mono);font-size:12px;text-align:right}
-.proj-balance{font-weight:600;text-align:right}
+.proj-horizon-btn{display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:20px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;transition:transform .12s;font-family:var(--font)}
+.proj-horizon-btn:active{transform:scale(.94)}
+
+/* BUDGET — Categorias Orçadas */
+.cat-add-btn{background:transparent;color:var(--text2);border:1px solid var(--border2);border-radius:8px;padding:5px 11px;font-size:12px;cursor:pointer;font-family:var(--font)}
+.cat-edit-btn{background:transparent;color:var(--text2);border:1px solid var(--border2);border-radius:7px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:var(--font)}
+.cat-del-btn{background:transparent;color:var(--red);border:1px solid var(--red-border);border-radius:7px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:var(--font)}
 
 /* BUDGET PAGE */
-.budget-item{display:flex;align-items:flex-start;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 13px;transition:background .15s;margin-bottom:7px}
+.budget-item{display:flex;flex-wrap:wrap;width:100%;align-items:flex-start;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 13px;transition:background .15s;box-sizing:border-box}
+.budget-item-full{width:100%}
 .budget-item.done{opacity:.55}
 .budget-item.done .budget-name{text-decoration:line-through}
 .budget-check{width:26px;height:26px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .2s;font-size:13px}
@@ -224,19 +336,11 @@ select option{background:var(--bg3)}
 .budget-meta span, .budget-meta .person-tag{flex-shrink:0;align-self:flex-start}
 .budget-right{text-align:right;flex-shrink:0}
 .budget-val{font-size:14px;font-weight:600;font-family:var(--mono);color:var(--text2)}
-.budget-actions{display:flex;gap:8px;margin-top:3px;justify-content:flex-end}
-.budget-progress{background:var(--bg4);border-radius:3px;height:4px;overflow:hidden;margin-bottom:10px}
-.budget-progress-fill{height:100%;border-radius:3px;background:var(--green);transition:width .4s}
-
-/* BUDGET SUMMARY (vertical layout) */
-#budget-summary-text{display:flex;flex-direction:column;align-items:flex-start;gap:8px;font-size:12px}
-#budget-summary-text > div{width:100%}
-
 
 .tx-subtoggle{font-size:11px;color:var(--blue);margin-top:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
-.tx-subitems{margin-top:8px;border-top:1px dashed var(--border);padding-top:8px;display:none}
-.tx-subitems.open{display:block!important}
-.tx-subitem{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--text2);padding:3px 0;font-family:var(--mono)}
+.tx-subitems{margin-top:6px;border-top:1px dashed var(--border);padding-top:6px;display:none;flex-direction:column;gap:3px}
+.tx-subitems.open{display:flex!important}
+.tx-subitem{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--text2);font-family:var(--mono)}
 .subitem-row{display:grid;grid-template-columns:1fr 80px 32px 44px 32px;gap:6px;margin-bottom:8px;align-items:center}
 .subitem-repeat{background:var(--bg4);border:1px solid var(--border);color:var(--text3);border-radius:8px;height:38px;width:32px;cursor:pointer;font-size:13px;transition:color .15s}
 .subitem-repeat.active{color:var(--teal);border-color:var(--teal);background:var(--teal-bg)}
@@ -265,13 +369,19 @@ select option{background:var(--bg3)}
 .empty-icon{font-size:36px;margin-bottom:10px}
 .section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .section-title{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:500}
-#toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-90px);background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:10px 20px;border-radius:var(--radius-sm);font-size:13px;z-index:999;transition:transform .3s cubic-bezier(.4,0,.2,1);white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.4)}
-#toast.show{transform:translateX(-50%) translateY(0)}
+#toast{display:none;position:fixed;top:20px;left:50%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:10px 20px 8px;border-radius:var(--radius-sm);font-size:13px;z-index:999;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.4);overflow:hidden;cursor:pointer}
+#toast.show{display:block;animation:toastIn .25s cubic-bezier(.4,0,.2,1) both}
+#toast.hide{display:block;animation:toastOut .25s cubic-bezier(.4,0,.2,1) both}
+#toast-bar{height:2px;background:var(--border2);border-radius:2px;margin-top:7px;transform-origin:left}
+#toast.show #toast-bar{animation:toastShrink 2.3s linear forwards}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,-16px) scale(.96)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+@keyframes toastOut{from{opacity:1;transform:translate(-50%,0) scale(1)}to{opacity:0;transform:translate(-50%,-10px) scale(.97)}}
+@keyframes toastShrink{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 
 /* CONFIRM DIALOG */
 #confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:400;align-items:center;justify-content:center;padding:20px}
 #confirm-overlay.open{display:flex}
-#confirm-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:22px 18px;width:100%;max-width:320px}
+#confirm-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:22px 18px;width:100%;max-width:320px;animation:popIn .2s ease}
 #confirm-title{font-size:15px;font-weight:600;margin-bottom:8px}
 #confirm-msg{font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.6}
 #confirm-btns{display:flex;flex-direction:column;gap:8px}
@@ -291,11 +401,66 @@ select option{background:var(--bg3)}
 .row-gasto-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .subitem-sep{margin-top:6px;padding-top:6px;border-top:1px solid var(--border)}
 .btn-subitem-add{margin-top:6px;background:none;border:1px dashed var(--border);color:var(--text3);border-radius:var(--radius-sm);padding:6px 12px;font-size:13px;cursor:pointer;width:100%}
-.budget-summary-col{display:flex;flex-direction:column;align-items:flex-start;gap:4px;font-size:12px}
 .budget-meta-row{white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
 .budget-due-grid{display:grid;grid-template-columns:80px 1fr 1.5fr;gap:8px;align-items:end}
 .limite-bar-track{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden}
-.color-green-nowrap{color:var(--green);white-space:nowrap}
+
+/* ── FASE 3: CARTÕES REDESIGN ── */
+.cartoes-resumo-topo{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:12px}
+.cartoes-resumo-linha1{display:flex;align-items:center;justify-content:space-between}
+.cartoes-resumo-total{font-size:14px;font-weight:600;font-family:var(--mono);color:var(--red)}
+.cartoes-resumo-venc{display:flex;align-items:center;gap:5px;margin-top:7px;padding-top:7px;border-top:1px dashed var(--border)}
+.btn-novo-cartao{width:100%;margin-top:4px;background:transparent;color:var(--text2);border:1px dashed var(--border2);border-radius:12px;padding:12px;font-size:13px;cursor:pointer;font-family:var(--font);transition:background .15s}
+.btn-novo-cartao:active{transform:scale(.98);background:var(--bg3)}
+.cc-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;margin-bottom:12px;overflow:hidden}
+.cc-header{position:relative;padding:14px 16px 12px;cursor:pointer;transition:opacity .15s}
+.cc-header:active{opacity:.88}
+.cc-header-top{position:absolute;top:12px;right:14px;display:flex;align-items:center;gap:8px}
+.cc-pessoa-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px 2px 3px;border-radius:20px;background:rgba(0,0,0,.25);font-size:10px;color:#fff}
+.cc-chevron{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;transition:transform .28s cubic-bezier(.34,1.56,.64,1)}
+.cc-chip{width:30px;height:22px;border-radius:5px;background:linear-gradient(135deg,rgba(255,255,255,.75),rgba(255,255,255,.35));margin-bottom:10px;display:flex;align-items:center;justify-content:center}
+.cc-chip-detail{width:18px;height:12px;border-radius:2px;border:1.5px solid rgba(0,0,0,.25)}
+.cc-name{font-size:16px;font-weight:700;color:#fff;letter-spacing:.2px;text-shadow:0 1px 3px rgba(0,0,0,.3)}
+.cc-dates{font-size:10px;color:rgba(255,255,255,.85);margin-top:2px}
+.cc-fatura-row{display:flex;align-items:flex-end;justify-content:space-between;margin-top:10px}
+.cc-fatura-label{font-size:10px;color:rgba(255,255,255,.8)}
+.cc-fatura-val{font-size:21px;font-weight:600;font-family:var(--mono);color:#fff;letter-spacing:-.5px;text-shadow:0 1px 3px rgba(0,0,0,.3)}
+.cc-disp-val{font-size:13px;font-weight:600;font-family:var(--mono);color:#fff}
+.cc-body{padding:12px 16px 16px}
+.cc-body-expanded{margin-top:12px}
+.cc-day-group{margin-bottom:10px}
+.cc-day-header{display:flex;align-items:center;gap:8px;margin:12px 0 6px}
+.cc-day-date{font-size:11px;font-weight:700;color:var(--text2);font-family:var(--mono)}
+.cc-day-count{font-size:10px;color:var(--text3)}
+.cc-day-rule{flex:1;height:1px;background:var(--border)}
+.cc-day-tot{font-size:11px;font-family:var(--mono);color:var(--text3)}
+.cc-gasto-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:9px 12px;cursor:pointer;transition:background .15s;margin-bottom:6px}
+.cc-gasto-card:active{opacity:.85}
+.cc-gasto-top{display:flex;align-items:center;gap:10px}
+.cc-gasto-name-wrap{flex:1;display:flex;align-items:center;gap:7px;min-width:0}
+.cc-gasto-name{font-size:13px;font-weight:500}
+.cc-gasto-val{font-size:13px;font-weight:600;font-family:var(--mono);color:var(--red);flex-shrink:0}
+.cc-parcela-badge{display:inline-flex;padding:1px 7px;border-radius:20px;background:var(--purple-bg);border:1px solid var(--purple-border);color:var(--purple);font-size:10px;font-weight:600}
+.cc-subs{margin-top:6px;border-top:1px dashed var(--border);padding-top:6px;display:flex;flex-direction:column;gap:3px}
+.cc-sub-row{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--text2);font-family:var(--mono)}
+.cc-vermais-btn{width:100%;margin-top:4px;background:var(--bg3);color:var(--text2);border:1px solid var(--border);border-radius:9px;padding:9px;font-size:12px;font-weight:500;cursor:pointer;transition:transform .1s}
+.cc-vermais-btn:active{transform:scale(.98);background:var(--bg4)}
+.cc-footer-row{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+.cc-edit-btn{background:transparent;color:var(--text2);border:1px solid var(--border2);border-radius:9px;padding:7px 13px;font-size:12px;cursor:pointer;font-family:var(--font);transition:transform .1s}
+.cc-edit-btn:active{transform:scale(.94);background:var(--bg4)}
+.cc-addgasto-btn{background:var(--blue);color:#fff;border:none;border-radius:9px;padding:7px 13px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);transition:transform .1s}
+.cc-addgasto-btn:active{transform:scale(.94);filter:brightness(.9)}
+.cc-recs-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cc-recs-title{font-size:10px;color:var(--teal);text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.cc-recs-total{font-size:11px;font-family:var(--mono);color:var(--teal)}
+.cc-rec-row{background:var(--teal-bg);border:1px solid var(--teal-border);border-radius:10px;padding:9px 12px;cursor:pointer;transition:transform .15s}
+.cc-rec-top{display:flex;align-items:center;gap:10px}
+.cc-rec-row:active{transform:scale(.98)}
+.cc-rec-name{font-size:13px;font-weight:500}
+.cc-rec-meta{font-size:11px;color:var(--teal);margin-top:1px}
+.cc-rec-val{font-size:13px;font-weight:600;font-family:var(--mono);color:var(--red);flex-shrink:0}
+.cc-addrec-btn{width:100%;margin-top:10px;background:transparent;color:var(--teal);border:1px dashed var(--teal-border);border-radius:9px;padding:8px;font-size:12px;cursor:pointer;font-family:var(--font);transition:transform .1s}
+.cc-addrec-btn:active{transform:scale(.98);background:var(--teal-bg)}
 .btn-subitem-add{margin-top:6px;background:none;border:1px dashed var(--border);color:var(--text3);border-radius:var(--radius-sm);padding:6px 12px;font-size:13px;cursor:pointer;width:100%}
 .row-between-mt{display:flex;justify-content:space-between;align-items:center;margin-top:10px;margin-bottom:8px}
 .row-between-mt4{display:flex;justify-content:space-between;align-items:center;margin-top:10px;margin-bottom:4px}
@@ -306,11 +471,80 @@ select option{background:var(--bg3)}
 input.field-invalid,select.field-invalid,textarea.field-invalid{border-color:var(--red)!important;box-shadow:0 0 0 2px rgba(220,53,69,.15)}
 @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-4px)}40%,80%{transform:translateX(4px)}}
 .field-invalid{animation:shake .3s ease}
+
+/* ── FASE 6: MICROINTERAÇÕES ── */
+@keyframes splashFade{to{opacity:0;visibility:hidden}}
+@keyframes splashPopIn{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.08);opacity:1}100%{transform:scale(1)}}
+@keyframes splashDrawLine{to{stroke-dashoffset:0}}
+@keyframes splashDot{to{opacity:1}}
+@keyframes splashText{to{opacity:1}}
+@keyframes flashPulse{0%{opacity:0}18%{opacity:1}100%{opacity:0}}
+@keyframes themeRipple{0%{clip-path:circle(0% at 82% 12%);opacity:.85}100%{clip-path:circle(150% at 82% 12%);opacity:0}}
+@keyframes navBounce{0%{transform:scale(1)}40%{transform:scale(1.26)}70%{transform:scale(.94)}100%{transform:scale(1)}}
+@keyframes spinCW{to{transform:rotate(360deg)}}
+@keyframes drawLine{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes barGrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes fadeBg{from{opacity:0}to{opacity:1}}
+@keyframes sheetUp{0%{transform:translateY(100%)}62%{transform:translateY(-1.5%)}82%{transform:translateY(.5%)}100%{transform:translateY(0)}}
+#splash-screen.hide{animation:splashFade .45s ease forwards}
+#flash-overlay{display:none;position:fixed;inset:0;z-index:998;pointer-events:none;border-radius:0}
+#flash-overlay.on{display:block;animation:flashPulse .52s ease-out}
+#theme-ripple-overlay{display:none;position:fixed;inset:0;z-index:997;pointer-events:none;background:var(--bg)}
+#theme-ripple-overlay.on{display:block;animation:themeRipple .6s ease-out forwards}
+#tour-overlay{display:none;position:fixed;inset:0;z-index:960;background:rgba(0,0,0,.55);backdrop-filter:blur(2px);align-items:flex-end}
+#tour-overlay.open{display:flex;animation:fadeBg .2s ease}
+#tour-sheet{animation:sheetUp .3s cubic-bezier(.4,0,.2,1)}
+.slot-digit-window{display:inline-block;height:1em;overflow:hidden;vertical-align:top}
+.slot-digit-strip{display:block;transition:transform .55s cubic-bezier(.25,.9,.3,1)}
+.slot-digit-strip span{display:block;height:1em}
+.empty-cta-icon{width:52px;height:52px;border-radius:16px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 10px}
+.empty-cta-title{font-size:14px;color:var(--text2);font-weight:500}
+.empty-cta-sub{font-size:12px;color:var(--text3);max-width:220px;line-height:1.5;margin:4px auto 0}
+.empty-cta-btn{margin-top:10px;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)}
+.empty-cta-btn:active{transform:scale(.96)}
 </style>
 </head>
 <body>
 
-<div id="toast"></div>
+<div id="toast" onclick="dismissToast()"><span id="toast-msg"></span><div id="toast-bar"></div></div>
+
+<!-- FASE 6 — E16: flash de conclusão sincronizado com o toast -->
+<div id="flash-overlay"></div>
+
+<!-- FASE 6 — G4: ripple de tema -->
+<div id="theme-ripple-overlay"></div>
+
+<!-- FASE 6 — pull-to-refresh: ícone flutuante -->
+<div id="ptr-indicator" style="position:fixed;top:0;left:0;right:0;display:flex;justify-content:center;padding-top:6px;pointer-events:none;z-index:150;transition:top .25s cubic-bezier(.34,1.56,.64,1)">
+  <div style="width:30px;height:30px;border-radius:50%;background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.25);opacity:0">
+    <svg id="ptr-icon" viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--text3);fill:none;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+  </div>
+</div>
+
+<!-- FASE 6 — splash screen -->
+<div id="splash-screen" style="position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px">
+  <div style="width:86px;height:86px;border-radius:24px;background:linear-gradient(145deg,var(--blue),#7c5cff);display:flex;align-items:center;justify-content:center;box-shadow:0 16px 40px var(--blue-bg);animation:splashPopIn .5s cubic-bezier(.34,1.56,.64,1) both">
+    <svg viewBox="0 0 48 48" style="width:52px;height:52px">
+      <polyline id="splash-line" points="8,32 17,26 24,30 32,18 40,13" pathLength="1" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="stroke-dasharray:1;stroke-dashoffset:1;animation:splashDrawLine .85s cubic-bezier(.4,0,.2,1) .25s forwards"></polyline>
+      <circle cx="40" cy="13" r="3.2" fill="#fff" style="opacity:0;animation:splashDot .3s ease 1s forwards"></circle>
+    </svg>
+  </div>
+  <div style="font-size:16px;font-weight:700;letter-spacing:.3px;color:var(--text);opacity:0;animation:splashText .4s ease .55s forwards">Finanças</div>
+</div>
+
+<!-- FASE 6 — F21: tour guiado -->
+<div id="tour-overlay">
+  <div id="tour-sheet" style="background:var(--bg2);border-radius:22px 22px 0 0;border:1px solid var(--border);width:100%;padding:22px 20px 26px">
+    <div id="tour-dots" style="display:flex;justify-content:center;gap:6px;margin-bottom:16px"></div>
+    <div id="tour-icon" style="width:56px;height:56px;border-radius:18px;background:var(--blue-bg);border:1px solid var(--blue-border);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px"></div>
+    <div id="tour-title" style="font-size:17px;font-weight:700;text-align:center;margin-bottom:8px"></div>
+    <div id="tour-text" style="font-size:13px;color:var(--text2);text-align:center;line-height:1.6;margin-bottom:22px;padding:0 8px"></div>
+    <div style="display:flex;gap:8px">
+      <button onclick="skipTour()" class="tour-action-btn" style="flex:1;background:transparent;color:var(--text2);border:1px solid var(--border2);border-radius:10px;padding:12px;font-size:14px;cursor:pointer;font-family:var(--font);transition:transform .1s">Pular</button>
+      <button id="tour-next-btn" onclick="nextTourStep()" class="tour-action-btn" style="flex:2;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);transition:transform .1s"></button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL -->
 <div id="modal-overlay" onclick="handleOverlayClick(event)">
@@ -358,17 +592,19 @@ input.field-invalid,select.field-invalid,textarea.field-invalid{border-color:var
 <!-- DASHBOARD -->
 <div id="page-dash" class="page active">
   <div class="page-header">
-    <span class="page-title">💰 Finanças</span>
-    <button class="cfg-btn" onclick="showPageCfg()" title="Configurações">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-    </button>
-  </div>
-  <div style="display:flex;justify-content:center;margin-bottom:14px;position:relative">
-    <div class="month-nav">
-      <button onclick="changeMonth(-1)">‹</button>
-      <span class="month-label" id="month-label-dash"></span>
-      <button onclick="changeMonth(1)">›</button>
-      <button class="set-ref-btn" onclick="setRefMonth()" title="Definir como mês atual" style="visibility:hidden;font-size:14px;width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer">📌</button>
+    <div>
+      <div id="dash-greeting" style="font-size:13px;color:var(--text3);font-weight:500"></div>
+      <span class="page-title">Finanças</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div class="dash-month-pill">
+        <button onclick="changeMonth(-1)" class="dash-month-pill-btn">‹</button>
+        <span class="month-label" id="month-label-dash" onclick="setRefMonth()"></span>
+        <button onclick="changeMonth(1)" class="dash-month-pill-btn">›</button>
+      </div>
+      <button class="cfg-btn" onclick="showPageCfg()" title="Configurações">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </button>
     </div>
   </div>
   <div id="install-banner">
@@ -377,35 +613,105 @@ input.field-invalid,select.field-invalid,textarea.field-invalid{border-color:var
     <button class="btn btn-primary btn-sm" onclick="installPWA()">Instalar</button>
   </div>
   <div id="person-filter-bar-dash"></div>
-  <div id="last-update-bar" style="display:flex;align-items:center;justify-content:space-between;padding:6px 2px;margin-bottom:4px">
-    <button onclick="showUpdateHistory()" style="background:none;border:none;padding:0;cursor:pointer;text-align:left">
-      <span id="last-update-label" style="font-size:12px;color:var(--text3)">🕐 Nunca atualizado</span>
-    </button>
-    <button onclick="markLastUpdate()" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px 10px;font-size:12px;color:var(--text2);cursor:pointer">Marcar atualizado</button>
+  <!-- FASE 5 — C11: alertas inteligentes -->
+  <div id="alerts-list" style="display:none;flex-direction:column;gap:8px;margin-bottom:12px"></div>
+  <div id="hero-saldo-card"></div>
+  <!-- entradas/saídas -->
+  <div class="card">
+    <div class="dash-inout-row">
+      <div>
+        <div class="dash-inout-label"><span class="dash-inout-dot" style="background:var(--green)"></span>ENTRADAS</div>
+        <div class="dash-inout-val" style="color:var(--green)" id="dash-income-val"></div>
+      </div>
+      <div style="text-align:right">
+        <div class="dash-inout-label" style="justify-content:flex-end">SAÍDAS<span class="dash-inout-dot" style="background:var(--red)"></span></div>
+        <div class="dash-inout-val" style="color:var(--red)" id="dash-out-val"></div>
+      </div>
+    </div>
+    <div class="dash-inout-bar"><div id="dash-inout-bar-fill" style="background:var(--red);transition:width .5s cubic-bezier(.4,0,.2,1)"></div><div style="flex:1;background:var(--green)"></div></div>
+    <div class="dash-inout-caption">Você usou <b id="dash-inout-pct"></b> do que entrou — <span id="dash-inout-label"></span></div>
   </div>
-  <div class="summary-grid" id="summary-cards"></div>
-  <div class="card"><div class="card-title">Comprometimento da renda</div><div id="prog-area"></div></div>
+  <!-- FASE 5 — C10: limite mensal de gasto livre -->
+  <div class="card" id="limite-variavel-card" style="display:none"></div>
+  <!-- composição donut -->
+  <div class="card" id="dash-donut-card">
+    <div class="card-title">Composição das despesas</div>
+    <div style="display:flex;align-items:center;gap:18px">
+      <div class="dash-donut" id="dash-donut"><div class="dash-donut-hole"><div class="dash-donut-hole-label">total</div><div class="dash-donut-hole-val" id="dash-donut-total"></div></div></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:11px" id="dash-donut-legend"></div>
+    </div>
+  </div>
   <div class="card" id="pessoa-summary-card" style="display:none">
     <div class="card-title">Por responsável</div>
     <div id="pessoa-summary"></div>
   </div>
-  <div class="card" id="chart-composition-card"></div>
-  <div class="card" id="chart-history-card"></div>
+  <!-- FASE 5 — C9: metas de economia -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <span class="card-title" style="margin-bottom:0">Metas de economia</span>
+      <button onclick="openGoalModal(null)" class="goal-add-btn" style="background:none;border:none;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);transition:transform .1s">+ Nova</button>
+    </div>
+    <div id="goals-list"></div>
+    <div id="goals-empty" style="display:none;text-align:center;color:var(--text3);padding:20px 10px;font-size:13px;line-height:1.6">Crie uma meta para acompanhar seu progresso de economia</div>
+  </div>
+  <!-- receita vs saída 6 meses -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <span class="card-title" style="margin-bottom:0">Receita vs Saída — 6 meses</span>
+      <div style="display:flex;gap:10px">
+        <span class="dash-hist-legend"><span class="dash-inout-dot" style="background:var(--green)"></span>Receita</span>
+        <span class="dash-hist-legend"><span class="dash-inout-dot" style="background:var(--red)"></span>Saída</span>
+      </div>
+    </div>
+    <div id="dash-hist-chart" style="display:flex;align-items:flex-end;gap:10px;height:112px"></div>
+  </div>
+  <div class="card report-link-card" style="cursor:pointer;display:flex;align-items:center;gap:12px;transition:transform .1s" onclick="goReport()">
+    <div style="width:40px;height:40px;border-radius:12px;background:var(--blue-bg);border:1px solid var(--blue-border);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:var(--blue);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    </div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:14px;font-weight:600" id="report-link-title">Relatório do mês</div>
+      <div style="font-size:12px;color:var(--text3)">Retrospectiva, recordes e evolução patrimonial</div>
+    </div>
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--text3);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0"><path d="M9 18l6-6-6-6"/></svg>
+  </div>
+</div>
+
+<!-- RELATÓRIO -->
+<div id="page-report" class="page">
+  <div class="page-header">
+    <button onclick="goDashFromReport()" class="page-back-btn" style="background:none;border:none;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:6px;font-size:14px;font-family:var(--font);padding:0;transition:transform .1s">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      Voltar
+    </button>
+    <span class="page-title" id="report-title">Relatório</span>
+    <div style="width:60px"></div>
+  </div>
+  <div id="report-content"></div>
 </div>
 
 <!-- LANÇAMENTOS -->
 <div id="page-tx" class="page">
   <div class="page-header">
     <span class="page-title">Lançamentos</span>
-    <button class="btn btn-primary btn-sm" onclick="showAddModal()">+ Novo</button>
-  </div>
-  <div style="display:flex;justify-content:center;align-items:center;margin-bottom:12px;position:relative">
-    <div class="month-nav">
-      <button onclick="changeMonth(-1)">‹</button>
-      <span class="month-label" id="month-label-tx"></span>
-      <button onclick="changeMonth(1)">›</button>
-      <button class="set-ref-btn" onclick="setRefMonth()" title="Definir como mês atual" style="visibility:hidden;font-size:14px;width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer">📌</button>
+    <div class="dash-month-pill">
+      <button onclick="changeMonth(-1)" class="dash-month-pill-btn">‹</button>
+      <span class="month-label" id="month-label-tx" onclick="setRefMonth()"></span>
+      <button onclick="changeMonth(1)" class="dash-month-pill-btn">›</button>
     </div>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+    <div id="tx-view-toggle" style="display:flex;align-items:center;height:32px;padding:3px;gap:2px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;flex-shrink:0"></div>
+    <div id="person-filter-bar-tx" style="margin:0;flex:1;min-width:0"></div>
+  </div>
+  <div class="tx-search-box">
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--text3)" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input id="tx-search-input" type="text" placeholder="Buscar por nome, valor ou observação..." oninput="setTxSearch(this.value)">
+    <button id="tx-search-clear" onclick="clearTxSearch()" title="Limpar busca">×</button>
+  </div>
+  <div class="tx-count-bar">
+    <span id="tx-count-label"></span>
+    <span id="tx-count-balance"></span>
   </div>
   <div class="tabs" id="tx-tabs">
     <button class="tab active" onclick="filterTx('all',this)">Todos</button>
@@ -414,39 +720,97 @@ input.field-invalid,select.field-invalid,textarea.field-invalid{border-color:var
     <button class="tab" onclick="filterTx('variable',this)">Variáveis</button>
     <button class="tab" onclick="filterTx('credit',this)">💳 Cartão</button>
   </div>
-  <div id="person-filter-bar-tx"></div>
   <div id="tx-list" class="tx-list"></div>
+  <div id="tx-calendar" style="display:none"></div>
 </div>
 
 <!-- PROJEÇÃO -->
 <div id="page-proj" class="page">
   <div class="page-header">
     <span class="page-title">Projeção</span>
-    <div style="display:flex;gap:6px;align-items:center">
+    <div style="display:flex;gap:5px">
+      <button id="proj-view-monthly-btn" onclick="setProjView('monthly')" class="proj-view-btn" style="padding:5px 12px;border-radius:20px;font-size:12px;font-family:var(--font);white-space:nowrap;transition:all .2s">Mensal</button>
+      <button id="proj-view-daily-btn" onclick="setProjView('daily')" class="proj-view-btn" style="padding:5px 12px;border-radius:20px;font-size:12px;font-family:var(--font);white-space:nowrap;transition:all .2s">Dia a dia</button>
+    </div>
+  </div>
+  <div id="person-filter-bar-proj" style="margin-bottom:14px"></div>
+  <div id="proj-period-tabs" style="display:flex;justify-content:space-between;gap:5px;align-items:center;margin-bottom:14px">
+    <div class="dash-month-pill">
+      <button onclick="changeMonth(-1)" class="dash-month-pill-btn">‹</button>
+      <span class="month-label" id="month-label-proj" onclick="setRefMonth()"></span>
+      <button onclick="changeMonth(1)" class="dash-month-pill-btn">›</button>
+    </div>
+    <div style="display:flex;gap:5px;align-items:center">
       <button class="tab active" id="proj-tab-3" onclick="setProjPeriods(3,this)">3m</button>
       <button class="tab" id="proj-tab-6" onclick="setProjPeriods(6,this)">6m</button>
       <button class="tab" id="proj-tab-12" onclick="setProjPeriods(12,this)">12m</button>
-      <input type="number" id="proj-custom-input" min="1" max="60" placeholder="…" onchange="setProjPeriodsCustom(this.value)" style="width:46px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg3);color:var(--text);font-size:13px;text-align:center">
+      <input type="number" id="proj-custom-input" min="1" max="60" placeholder="…" onchange="setProjPeriodsCustom(this.value)" style="width:46px;padding:5px 6px;border:1px solid var(--border);border-radius:20px;background:var(--bg3);color:var(--text);font-size:12px;text-align:center">
     </div>
   </div>
-  <div style="display:flex;justify-content:center;margin-bottom:14px;position:relative">
-    <div class="month-nav">
-      <button onclick="changeMonth(-1)">‹</button>
-      <span class="month-label" id="month-label-proj"></span>
-      <button onclick="changeMonth(1)">›</button>
-      <button class="set-ref-btn" onclick="setRefMonth()" title="Definir como mês atual" style="visibility:hidden;font-size:14px;width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer">📌</button>
+  <div id="proj-monthly-view">
+    <div class="card" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:500">Saldo projetado (acumulado)</span>
+        <span id="proj-chart-tot" style="font-size:11px;font-weight:600"></span>
+      </div>
+      <svg id="proj-chart-svg" viewBox="0 0 300 90" preserveAspectRatio="none" style="width:100%;height:78px;display:block;margin-top:8px">
+        <line x1="0" y1="60" x2="300" y2="60" stroke="var(--bg4)" stroke-width="1"/>
+        <polyline id="proj-chart-area" points="" fill="none" opacity="0.10" stroke="none"/>
+        <polyline id="proj-chart-line" points="" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div id="proj-negative-warning" style="display:none;margin-top:10px;font-size:11px;color:var(--red);background:var(--red-bg);border:1px solid var(--red-border);border-radius:8px;padding:7px 10px"></div>
+    </div>
+    <div class="card">
+      <div class="proj-header">
+        <span>Mês</span>
+        <span style="color:var(--green)">Entrada</span>
+        <span style="color:var(--red)">Saída</span>
+        <span style="color:var(--blue)">Saldo</span>
+      </div>
+      <div id="proj-list"></div>
+      <div id="proj-total" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"></div>
     </div>
   </div>
-  <div id="person-filter-bar-proj" style="margin-bottom:12px"></div>
-  <div class="card">
-    <div class="proj-header">
-      <span>Mês</span>
-      <span style="color:var(--green)">Entrada</span>
-      <span style="color:var(--red)">Saída</span>
-      <span style="color:var(--blue)">Saldo</span>
+  <div id="proj-daily-view" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="dash-month-pill">
+        <button onclick="changeMonth(-1)" class="dash-month-pill-btn">‹</button>
+        <span class="month-label" id="month-label-proj-daily" onclick="setRefMonth()"></span>
+        <button onclick="changeMonth(1)" class="dash-month-pill-btn">›</button>
+      </div>
+      <button onclick="openHorizon()" class="proj-horizon-btn"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>Horizonte</button>
     </div>
-    <div id="proj-list"></div>
-    <div id="proj-total" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"></div>
+    <div class="card">
+      <div style="display:grid;grid-template-columns:44px 1fr 1fr;font-size:11px;color:var(--text3);padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:6px">
+        <span>Dia</span><span>Movimento</span><span style="text-align:right">Saldo</span>
+      </div>
+      <div id="proj-daily-list"></div>
+      <div id="proj-daily-final" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"></div>
+      <div style="display:flex;gap:12px;margin-top:12px;padding-top:10px;border-top:1px dashed var(--border);flex-wrap:wrap">
+        <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:2px;background:var(--green-bg);border:1px solid var(--green-border)"></span>Dia com entrada</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:2px;background:var(--amber-bg);border:1px solid var(--amber-border)"></span>Dia com saída</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:2px;background:var(--text)"></span>Hoje</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HORIZONTE DE SALDOS (sheet full-height) -->
+<div id="horizon-overlay" style="display:none;position:fixed;inset:0;z-index:250;background:rgba(0,0,0,.7);backdrop-filter:blur(4px)" onclick="if(event.target===this)closeHorizon()">
+  <div style="background:var(--bg2);border-radius:20px 20px 0 0;border:1px solid var(--border);width:100%;height:92%;position:absolute;bottom:0;overflow-y:auto;padding:18px 12px 28px;animation:slideUp .25s cubic-bezier(.4,0,.2,1)">
+    <div class="modal-handle"></div>
+    <div style="font-size:16px;font-weight:600;margin-bottom:4px">Horizonte de saldos</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Saldo acumulado do mês, dia a dia — próximos 6 meses</div>
+    <div id="horizon-grid" style="overflow-x:auto"></div>
+    <div style="display:flex;gap:10px;margin-top:12px;padding-top:10px;border-top:1px dashed var(--border);flex-wrap:wrap">
+      <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:2px;background:var(--green)"></span>Saudável</span>
+      <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:2px;background:var(--amber)"></span>Apertado</span>
+      <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:2px;background:var(--red)"></span>Negativo</span>
+      <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:2px;background:var(--text)"></span>Hoje</span>
+    </div>
+    <div class="btn-row" style="margin-top:16px">
+      <button class="btn btn-primary" style="flex:1" onclick="closeHorizon()">Fechar</button>
+    </div>
   </div>
 </div>
 
@@ -454,35 +818,33 @@ input.field-invalid,select.field-invalid,textarea.field-invalid{border-color:var
 <div id="page-budget" class="page">
   <div class="page-header">
     <span class="page-title">Orçamento</span>
-    <button class="btn btn-primary btn-sm" onclick="showBudgetAddModal()">+ Item</button>
-  </div>
-  <div style="display:flex;justify-content:center;margin-bottom:14px;position:relative">
-    <div class="month-nav">
-      <button onclick="changeMonth(-1)">‹</button>
-      <span class="month-label" id="month-label-budget"></span>
-      <button onclick="changeMonth(1)">›</button>
-      <button class="set-ref-btn" onclick="setRefMonth()" title="Definir como mês atual" style="visibility:hidden;font-size:14px;width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer">📌</button>
+    <div class="dash-month-pill">
+      <button onclick="changeMonth(-1)" class="dash-month-pill-btn">‹</button>
+      <span class="month-label" id="month-label-budget" onclick="setRefMonth()"></span>
+      <button onclick="changeMonth(1)" class="dash-month-pill-btn">›</button>
     </div>
   </div>
-  <div id="person-filter-bar-budget" style="margin:12px 0"></div>
+  <div id="person-filter-bar-budget" style="margin-bottom:12px"></div>
   <div class="card" id="budget-summary-card" style="display:none">
-    <div id="budget-progress" class="budget-progress"><div id="budget-progress-fill" class="budget-progress-fill" style="width:0%"></div></div>
-    <div id="budget-summary-text"></div>
+    <div id="budget-summary-table"></div>
+  </div>
+  <div class="card" id="budget-avulsos-card" style="display:none">
+    <div id="budget-avulsos-table"></div>
   </div>
   <div class="card" id="categorias-budget-section" style="display:none">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <div class="card-title" style="margin-bottom:0">Categorias Orçadas</div>
-      <button class="btn btn-ghost btn-sm" onclick="showAddCategoriaModal()">+ Categoria</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <span style="font-size:14px;font-weight:600">Categorias Orçadas</span>
+      <button class="cat-add-btn" onclick="showAddCategoriaModal()">+ Categoria</button>
     </div>
     <div id="categorias-budget-list"></div>
   </div>
-  <div id="budget-list"></div>
+  <div id="budget-list" style="display:flex;flex-direction:column;gap:7px"></div>
 </div>
 
 <!-- CONFIGURAÇÕES -->
 <div id="page-cfg" class="page">
   <div class="page-header">
-    <button onclick="closeCfg()" style="background:none;border:none;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:6px;font-size:14px;font-family:var(--font);padding:0">
+    <button onclick="closeCfg()" class="page-back-btn" style="background:none;border:none;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:6px;font-size:14px;font-family:var(--font);padding:0;transition:transform .1s">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
       Voltar
     </button>
@@ -495,7 +857,19 @@ input.field-invalid,select.field-invalid,textarea.field-invalid{border-color:var
     <button class="btn btn-ghost btn-sm" style="margin-top:10px;width:100%" onclick="showAddPessoaModal()">+ Adicionar pessoa</button>
   </div>
   <div class="card">
+    <div class="card-title">Orçamento</div>
+    <div class="settings-row">
+      <div style="min-width:0;flex:1"><div class="settings-label">Limite de gasto livre</div><div class="settings-sub">Teto mensal para gastos variáveis, mostrado no Dashboard</div></div>
+      <input id="input-limite-variavel" oninput="onLimiteVariavelInput(this.value)" inputmode="decimal" placeholder="0" style="width:84px;flex-shrink:0;background:var(--bg4);border:1px solid var(--border2);color:var(--text);border-radius:9px;padding:9px 10px;font-size:13px;outline:none;font-family:var(--mono);text-align:right">
+    </div>
+  </div>
+  <div class="card">
     <div class="card-title">Aparência</div>
+    <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:8px">
+      <div class="settings-label">Temas prontos</div>
+      <div class="settings-sub" style="font-size:12px;color:var(--text3);margin-bottom:2px">Combinações completas num toque</div>
+      <div id="appearance-presets-row" class="ph-scroll" style="display:flex;gap:8px;overflow-x:auto;touch-action:pan-x;cursor:grab;padding-bottom:2px"></div>
+    </div>
     <div class="settings-row">
       <div><div class="settings-label">Tema escuro</div><div class="settings-sub">Alterna entre claro e escuro</div></div>
       <label class="toggle">
@@ -503,28 +877,67 @@ input.field-invalid,select.field-invalid,textarea.field-invalid{border-color:var
         <div class="toggle-track"></div><div class="toggle-thumb"></div>
       </label>
     </div>
+    <div class="settings-row">
+      <div><div class="settings-label">Tema automático</div><div class="settings-sub">Claro das 6h às 18h, escuro no resto do dia</div></div>
+      <label class="toggle">
+        <input type="checkbox" id="toggle-auto-theme" onchange="onAutoThemeToggle(this.checked)">
+        <div class="toggle-track"></div><div class="toggle-thumb"></div>
+      </label>
+    </div>
+    <div class="settings-row">
+      <div><div class="settings-label">Modo OLED</div><div class="settings-sub">Fundo preto absoluto no tema escuro</div></div>
+      <label class="toggle">
+        <input type="checkbox" id="toggle-oled" onchange="onOledToggle(this.checked)">
+        <div class="toggle-track"></div><div class="toggle-thumb"></div>
+      </label>
+    </div>
+    <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:8px">
+      <div class="settings-label">Cor de destaque</div>
+      <div class="settings-sub" style="font-size:12px;color:var(--text3);margin-bottom:2px">Usada em botões, links e destaques</div>
+      <div id="appearance-accent-row" style="display:flex;gap:10px"></div>
+    </div>
+    <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:8px">
+      <div class="settings-label">Tom das cores</div>
+      <div id="appearance-mood-row" style="display:flex;gap:6px"></div>
+    </div>
+    <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:8px">
+      <div class="settings-label">Estilo de superfície</div>
+      <div id="appearance-surface-row" style="display:flex;gap:6px"></div>
+    </div>
+    <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:8px">
+      <div class="settings-label">Capa do saldo</div>
+      <div id="appearance-hero-row" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    </div>
   </div>
   <div class="card">
     <div class="card-title">Dados</div>
     <div class="settings-row">
-      <div><div class="settings-label">📤 Exportar backup</div><div class="settings-sub">Salva todos os dados em JSON</div></div>
+      <div><div class="settings-label">📤 Exportar backup</div><div class="settings-sub">Salva tudo em JSON</div></div>
       <button class="btn btn-ghost btn-sm" onclick="exportData()">Exportar</button>
     </div>
     <div class="settings-row">
-      <div><div class="settings-label">📥 Importar backup</div><div class="settings-sub">Restaura dados de um JSON</div></div>
+      <div><div class="settings-label">📥 Importar backup</div><div class="settings-sub">Restaura de um JSON</div></div>
       <button class="btn btn-ghost btn-sm" onclick="document.getElementById('import-file').click()">Importar</button>
       <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
     </div>
     <div class="settings-row">
-      <div><div class="settings-label" style="color:var(--red)">🗑️ Apagar tudo</div><div class="settings-sub">Remove todos os lançamentos</div></div>
+      <div><div class="settings-label" style="color:var(--red)">🗑️ Apagar tudo</div><div class="settings-sub">Remove todos os dados</div></div>
       <button class="btn btn-danger btn-sm" onclick="clearAll()">Apagar</button>
     </div>
   </div>
   <div class="card">
     <div class="card-title">Aplicativo</div>
     <div class="settings-row">
-      <div><div class="settings-label">🔄 Atualizar app</div><div class="settings-sub">Força recarga completa — use quando uma atualização não aparecer</div></div>
+      <div><div class="settings-label">🕐 Histórico de atualizações</div><div class="settings-sub">Quando você marcou como atualizado</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="showUpdateHistory()">Ver</button>
+    </div>
+    <div class="settings-row">
+      <div><div class="settings-label">🔄 Atualizar app</div><div class="settings-sub">Força recarga quando algo não aparece</div></div>
       <button class="btn btn-ghost btn-sm" onclick="forceRefresh()">Atualizar</button>
+    </div>
+    <div class="settings-row">
+      <div><div class="settings-label">🧭 Tour guiado</div><div class="settings-sub">Reveja os recursos principais do app</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="startTour()">Iniciar</button>
     </div>
   </div>
   <div class="card">
@@ -540,17 +953,14 @@ input.field-invalid,select.field-invalid,textarea.field-invalid{border-color:var
 <!-- CARTÕES -->
 <div id="page-cards" class="page">
   <div class="page-header">
-    <span class="page-title">💳 Cartões</span>
-    <button class="btn btn-primary btn-sm" onclick="showAddCartaoModal()">+ Cartão</button>
-  </div>
-  <div style="display:flex;justify-content:center;margin-bottom:14px;position:relative">
-    <div class="month-nav">
-      <button onclick="changeMonth(-1)">‹</button>
-      <span class="month-label" id="month-label-cards"></span>
-      <button onclick="changeMonth(1)">›</button>
-      <button class="set-ref-btn" onclick="setRefMonth()" title="Definir como mês atual" style="visibility:hidden;font-size:14px;width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer">📌</button>
+    <span class="page-title">Cartões</span>
+    <div class="dash-month-pill">
+      <button onclick="changeMonth(-1)" class="dash-month-pill-btn">‹</button>
+      <span class="month-label" id="month-label-cards" onclick="setRefMonth()"></span>
+      <button onclick="changeMonth(1)" class="dash-month-pill-btn">›</button>
     </div>
   </div>
+  <div id="person-filter-bar-cards"></div>
   <div id="categorias-cartao-section" style="margin-bottom:16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px"></div>
   <div id="cards-list"></div>
 </div>
@@ -578,18 +988,23 @@ input.field-invalid,select.field-invalid,textarea.field-invalid{border-color:var
     <span>Orçamento</span>
   </button>
 </nav>
+<!-- FAB SPEED DIAL (Fase 2, seção 1) — conteúdo montado via renderFab() em js/app.js -->
+<div id="fab-root"></div>
 <script src="js/globals.js"></script>
 <script src="js/db.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/pessoas.js"></script>
 <script src="js/cards-modal.js"></script>
 <script src="js/cards-render.js"></script>
-<script src="js/chart.min.js"></script>
 <script src="js/transactions.js"></script>
 <script src="js/budget.js"></script>
 <script src="js/projection.js"></script>
+<script src="js/report.js"></script>
+<script src="js/planning.js"></script>
 <script src="js/theme.js"></script>
+<script src="js/appearance-ui.js"></script>
 <script src="js/config.js"></script>
+<script src="js/micro.js"></script>
 <script src="js/app.js"></script>
 </body>
           </html>

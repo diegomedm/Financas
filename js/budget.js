@@ -109,6 +109,7 @@ async function openBudgetValNumpad(){
     }
   }
 }
+function onSwipeEditBudget(id,key){closeSwipe(key,function(){patchBudgetCard(id);});showBudgetEditById(id);}
 async function showBudgetEditById(id){
 
   try{
@@ -823,13 +824,17 @@ function calcCategoriaRealizado(budgetId, todosGastos, todasTx, cartoes, tm, ty)
 async function renderBudget(){
   try{
   const allBudgetItems=await budgetAll();
-  // Carregar dados para calcCategoriaRealizado uma unica vez (evita N round-trips)
-  var todosGastosRender=[];
-  var todasTxRender=[];
-  var cartoesRender=[];
-  try{todosGastosRender=await gastosAll();}catch(e){}
-  try{todasTxRender=await dbAll();}catch(e){}
-  try{cartoesRender=await cartoesAll();}catch(e){}
+  // Carregar dados para calcCategoriaRealizado uma unica vez (evita N round-trips).
+  // As três leituras são independentes entre si — rodam em paralelo em vez de sequenciais;
+  // Promise.allSettled preserva a resiliência individual (uma falhar não derruba as outras).
+  var todosGastosRender=[],todasTxRender=[],cartoesRender=[];
+  const [_gastosR,_txR,_cartoesR]=await Promise.allSettled([gastosAll(),dbAll(),cartoesAll()]);
+  if(_gastosR.status==='fulfilled')todosGastosRender=_gastosR.value;
+  else console.warn('[renderBudget] falha ao ler gastos, seguindo com array vazio:',_gastosR.reason);
+  if(_txR.status==='fulfilled')todasTxRender=_txR.value;
+  else console.warn('[renderBudget] falha ao ler transações, seguindo com array vazio:',_txR.reason);
+  if(_cartoesR.status==='fulfilled')cartoesRender=_cartoesR.value;
+  else console.warn('[renderBudget] falha ao ler cartões, seguindo com array vazio:',_cartoesR.reason);
   // Renderizar seção de categorias orçadas
   _renderCategoriasBudget(allBudgetItems, todosGastosRender, todasTxRender, cartoesRender);
   // Filter manual items by recurrence logic (excluir categorias puras da lista)
@@ -878,7 +883,9 @@ async function renderBudget(){
   const listEl=document.getElementById('budget-list');
   if(!items.length){
     document.getElementById('budget-summary-card').style.display='none';
-    listEl.innerHTML=`<div class="empty"><div class="empty-icon">📋</div>Nenhum item no orçamento.<br>Toque em <strong>+ Item</strong> para começar.</div>`;
+    listEl.innerHTML=typeof emptyStateBudgetHtml==='function'
+      ?emptyStateBudgetHtml()
+      :`<div class="empty"><div class="empty-icon">📋</div>Nenhum item no orçamento.<br>Toque em <strong>+ Item</strong> para começar.</div>`;
     return;
   }
   const pessoasBud=await pessoasAll();
@@ -892,123 +899,344 @@ async function renderBudget(){
     }
     return base;
   });
-  const incomeItems=enrichedItems.filter(i=>i.type==='income');
-  const expenseItems=enrichedItems.filter(i=>i.type!=='income');
-  const totalIncome=incomeItems.reduce((s,i)=>s+i.value,0);
-  const totalExpense=expenseItems.reduce((s,i)=>s+i.value,0);
-  const doneIncome=incomeItems.filter(i=>doneIds.has(i.id)).reduce((s,i)=>s+i.value,0);
-  const doneExpense=expenseItems.filter(i=>doneIds.has(i.id)).reduce((s,i)=>s+i.value,0);
   /* Somar saldo restante das categorias ao total de despesas do resumo */
   /* Só aplica no mês atual (>= refMonth): mesma lógica da projeção */
   var _refMB=parseInt(localStorage.getItem('refMonth'));var _refYB=parseInt(localStorage.getItem('refYear'));
   if(isNaN(_refMB)||isNaN(_refYB)){var _nb=new Date();_refMB=_nb.getMonth();_refYB=_nb.getFullYear();}
-  var _catExpense=0;var _catRealizado=0;
+  var _catRealizado=0;var _catOrcado=0;
   if(curYear*12+curMonth>=_refYB*12+_refMB){
     var _catItems=allBudgetItems.filter(function(b){return b.isCategoriaOnly&&b.categoriaKey;});
     for(var _ci=0;_ci<_catItems.length;_ci++){
       var _cat=_catItems[_ci];
       var _realizado=calcCategoriaRealizado(_cat.id,todosGastosRender,todasTxRender,cartoesRender,curMonth,curYear);
       _catRealizado+=_realizado;
-      _catExpense+=Math.max(0,(_cat.value||0)-_realizado);
+      _catOrcado+=(_cat.value||0);
     }
   }
-  const doneCount=doneIds.size;
-  const pctAll=items.length>0?Math.round(doneCount/items.length*100):0;
   document.getElementById('budget-summary-card').style.display='block';
-  document.getElementById('budget-progress-fill').style.width=pctAll+'%';
-  document.getElementById('budget-progress-fill').style.background=pctAll<50?'var(--amber)':pctAll<100?'var(--blue)':'var(--green)';
-  const doneSaldo=doneIncome-(doneExpense+_catRealizado);
-  const totalSaldo=totalIncome-(totalExpense+_catRealizado+_catExpense);
-  const saldoColor=doneSaldo>=0?'var(--green)':'var(--red)';
-  const totalSaldoColor=totalSaldo>=0?'var(--green)':'var(--red)';
-  document.getElementById('budget-summary-text').innerHTML=
-    `<div class="budget-summary-col">
-      <span style="color:var(--text2)">${doneCount}/${items.length} realizados</span>
-      <span style="color:var(--green)">💵 ${fmt(doneIncome)} <span style="color:var(--text3)">/ ${fmt(totalIncome)}</span></span>
-      <span style="color:var(--red)">📤 ${fmt(doneExpense+_catRealizado)} <span style="color:var(--text3)">/ ${fmt(totalExpense+_catRealizado+_catExpense)}</span></span>
-      <span style="color:${saldoColor}">⚖️ ${doneSaldo>=0?'+':'-'}${fmt(Math.abs(doneSaldo))} <span style="color:${totalSaldoColor}">/ ${totalSaldo>=0?'+':'-'}${fmt(Math.abs(totalSaldo))}</span></span>
-    </div>`;
+  const _saldoPlanejado=_renderBudgetSummaryTable(enrichedItems, doneIds, _catRealizado, _catOrcado);
+  const _avulsosDoMes=_getAvulsosDoMes(todasTxRender,curMonth,curYear,pessoaFilter);
+  _renderBudgetAvulsosCard(_avulsosDoMes,_saldoPlanejado);
   const sorted=[...enrichedItems].sort((a,b)=>{
     const ad=doneIds.has(a.id)?1:0,bd=doneIds.has(b.id)?1:0;
     if(ad!==bd)return ad-bd;
     return((a.dueMonthOffset||0)*100+(a.dueDay||99))-((b.dueMonthOffset||0)*100+(b.dueDay||99));
   });
-  listEl.innerHTML=sorted.map(item=>{
-    if(item._isCartao){
-      const done=doneIds.has(item.id);
-      const pessoa=item._pessoa;
-      return`<div class="budget-item${done?' done':''}">
-        <div class="budget-check${done?' checked':''}" onclick="toggleBudgetDone('${item.id}')">${done?'✓':''}</div>
-        <div class="budget-info">
-          <div style="display:flex;align-items:center;gap:8px">
-            <div class="card-logo" style="background:${item._cartao.color};height:20px;width:32px;font-size:10px;border-radius:4px">${item.name.substring(0,3).toUpperCase()}</div>
-            <div class="budget-name">${item.name}</div>
-          </div>
-          <div class="budget-meta">
-            <span style="white-space:nowrap">💳 Fatura cartão</span>
-            ${item.dueDay?'<span style="color:var(--blue);font-size:10px">📅 '+String(item.dueDay).padStart(2,'0')+(item.dueMonthOffset?'/'+MONTHS[(curMonth+item.dueMonthOffset)%12].slice(0,3):'')+'</span>':''}
-            ${done?'<span class="color-green-nowrap">✅ Realizado</span>':''}
-            ${pessoa?'<span class="person-tag" style="white-space:nowrap">'+personAvatarHtml(pessoa,14)+' '+pessoa.nome+'</span>':''}
-            ${item._gastos&&item._gastos.length?renderSubitemsHtml(item._gastos.map(g=>({name:g.name,value:g.value}))):''}
-          </div>
-        </div>
-        <div class="budget-right">
-          <div class="budget-val" style="color:var(--red)">-${fmt(item.value)}</div>
-          <button class="tx-btn edit" style="margin-top:3px" onclick="showPage('cards',document.querySelector('.nav-btn:nth-child(3)'))">ver</button>
-        </div>
-      </div>`;
+  const prevCache=_budgetListCache;
+  _budgetListCache=sorted;
+  _budgetListCtx={doneIds,todosGastosRender,todasTxRender,cartoesRender};
+  _reconcileBudgetList(listEl,prevCache,sorted,_budgetListCtx);
+  }catch(err){console.error('renderBudget error:',err);}
+}
+
+/* Cache do último array + contexto renderizados por renderBudget() — usado por
+   patchBudgetCard() para atualizar um único item no swipe sem re-renderizar a lista
+   inteira (evita reiniciar a animação listItemIn em todos os itens a cada swipe). */
+var _budgetListCache=[];
+var _budgetListCtx=null;
+
+/* Reconciliação da lista de orçamento: em vez de sempre substituir o innerHTML inteiro
+   (o que reanima listItemIn em TODOS os itens e fecha qualquer swipe aberto), reaproveita
+   os nós DOM de itens que só mudaram de dado (ex: marcar como realizado altera o próprio
+   item) e só recria o que precisa mudar de POSIÇÃO na lista (ex: item concluído que vai
+   para o final). Itens cujo id já existia no DOM mantêm o nó (sem replay de animação),
+   mesmo que precisem ser movidos via insertBefore — mover um nó existente não reinicia
+   uma animation com fill-mode:both já concluída. */
+function _reconcileBudgetList(listEl,prevList,sorted,ctx){
+  if(!sorted.length){
+    listEl.innerHTML=typeof emptyStateBudgetHtml==='function'
+      ?emptyStateBudgetHtml()
+      :`<div class="empty"><div class="empty-icon">📋</div>Nenhum item no orçamento.<br>Toque em <strong>+ Item</strong> para começar.</div>`;
+    return;
+  }
+  sorted.forEach(function(item,idx){
+    const idKey=String(item.id);
+    const oldNode=document.getElementById('budget'+idKey+'-wrap');
+    const tmp=document.createElement('div');
+    tmp.innerHTML=_budgetItemCard(item,idx,ctx);
+    const node=tmp.firstElementChild;
+    // Item que já existia no DOM (mesmo mudando de posição/dado, ex: marcar como feito) não
+    // reanima listItemIn — só itens genuinamente novos entram com a animação de entrada.
+    if(oldNode){
+      node.style.animation='none';
+      oldNode.replaceWith(node);
     }
+    listEl.appendChild(node); // garante a posição correta ao final (no-op se já está lá)
+  });
+}
+function patchBudgetCard(id){
+  const idx=_budgetListCache.findIndex(function(i){return i.id===id;});
+  if(idx===-1||!_budgetListCtx){renderBudget();return;}
+  const wrap=document.getElementById('budget'+id+'-wrap');
+  if(!wrap){renderBudget();return;}
+  const html=_budgetItemCard(_budgetListCache[idx],idx,_budgetListCtx);
+  const tmp=document.createElement('div');
+  tmp.innerHTML=html;
+  const newWrap=tmp.firstElementChild;
+  newWrap.style.animation='none';
+  wrap.replaceWith(newWrap);
+}
+
+/* Pílula de status do item (spec do protótipo, linhas 2134-2141): ✓ Pago quando realizado,
+   ↪ Atrasado quando movido explicitamente, ⚠ Atrasado quando o vencimento já passou (mês
+   atual/passado), "Vence em Xd" quando faltam ≤5 dias, Pendente nos demais casos.
+   Avisos por proximidade de data só valem quando o mês de referência (pin 📌) é o mês real
+   do sistema — com o pin em outro mês, comparar datas contra o relógio real geraria falso
+   "atrasado" em tudo, então o item fica como Pendente neutro. */
+function _budgetStatusPill(item,done){
+  let label='Pendente',color='var(--text3)',bg='var(--bg4)',border='var(--border)';
+  if(done){label='✓ Pago';color='var(--green)';bg='var(--green-bg)';border='var(--green-border)';}
+  else if(item.delayed){label='↪ Atrasado';color='var(--amber)';bg='var(--amber-bg)';border='var(--amber-border)';}
+  else if(item.dueDay){
+    const today=new Date();today.setHours(0,0,0,0);
+    var refM=parseInt(localStorage.getItem('refMonth'));var refY=parseInt(localStorage.getItem('refYear'));
+    if(isNaN(refM)||isNaN(refY)){refM=today.getMonth();refY=today.getFullYear();}
+    const refIsRealToday=(refY===today.getFullYear()&&refM===today.getMonth());
+    if(refIsRealToday){
+      const rawDue=curMonth+(parseInt(item.dueMonthOffset)||0);
+      const dueYear=curYear+Math.floor(rawDue/12);
+      const dueMonth=((rawDue%12)+12)%12;
+      const dueDate=new Date(dueYear,dueMonth,parseInt(item.dueDay));dueDate.setHours(0,0,0,0);
+      const diffDays=Math.round((dueDate-today)/86400000);
+      const isCurrentOrPastMonth=(curYear<today.getFullYear())||(curYear===today.getFullYear()&&curMonth<=today.getMonth());
+      if(isCurrentOrPastMonth&&diffDays<0){label='⚠ Atrasado';color='var(--red)';bg='var(--red-bg)';border='var(--red-border)';}
+      else if(diffDays>=0&&diffDays<=5){label='Vence em '+(diffDays===0?'hoje':diffDays+'d');color='var(--amber)';bg='var(--amber-bg)';border='var(--amber-border)';}
+    }
+  }
+  return'<span style="display:inline-flex;align-items:center;padding:1px 8px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap;color:'+color+';background:'+bg+';border:1px solid '+border+'">'+label+'</span>';
+}
+
+function _budgetItemCard(item,idx,ctx){
+  const doneIds=ctx.doneIds,todosGastosRender=ctx.todosGastosRender,todasTxRender=ctx.todasTxRender,cartoesRender=ctx.cartoesRender;
+  const entryDelay=(idx*30)+'ms';
+  if(item._isCartao){
     const done=doneIds.has(item.id);
-    const income=item.type==='income';
-    // Barra de progresso categoria (RN-03, RN-12)
-    var catBarHtml='';
-    if(item.categoriaKey){
-      var realizado=calcCategoriaRealizado(item.id,todosGastosRender,todasTxRender,cartoesRender,curMonth,curYear);
-      var orcado=item.value||0;
-      var pct=orcado>0?(realizado/orcado*100):0;
-      var barColor=pct>=100?'var(--red)':pct>=80?'var(--amber)':'var(--green)';
-      var barWidth=Math.min(100,pct);
-      catBarHtml='<div style="margin-top:8px">'+
-        '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">'+
-        '<span style="font-size:11px;color:var(--text3)">Realizado</span>'+
-        '<span style="font-size:11px;color:'+barColor+';font-family:var(--mono)">'+fmt(realizado)+' / '+fmt(orcado)+'</span>'+
-        '</div>'+
-        '<div style="height:4px;background:var(--bg4);border-radius:2px;overflow:hidden">'+
-        '<div style="height:100%;border-radius:2px;background:'+barColor+';width:'+barWidth+'%"></div>'+
-        '</div>'+
-        '</div>';
-    }
-    return'<div class="budget-item'+(done?' done':'')+'">'+
-      '<div class="budget-check'+(done?' checked':'')+'" onclick="toggleBudgetDone('+item.id+')">'+(done?'✓':'')+'</div>'+
-      '<div class="budget-info">'+
-      '<div class="budget-name">'+item.name+'</div>'+
-      '<div class="budget-meta">'+
-      '<span class="budget-meta-row">'+
-      (CAT_LABELS[item.type]||'')+
-      (item.delayed?'<span class="badge" style="background:var(--amber-bg);color:var(--amber)">⚠️ Atrasado</span>':'')+
-      (!item.delayed&&(item.recurrence==='always'||item.type==='fixed'||item.type==='income')?'<span class="badge badge-blue">fixo</span>':'')+
-      (item.installmentCur&&item.installmentTotal&&!item.subRepeatStart?'<span class="badge badge-amber">'+item.installmentCur+'/'+item.installmentTotal+'</span>':'')+
-      (item.dueDay?'<span style="color:var(--blue);font-size:10px">📅 '+String(item.dueDay).padStart(2,'0')+(item.dueMonthOffset?'/'+MONTHS[(curMonth+item.dueMonthOffset)%12].slice(0,3):'')+'</span>':'')+
-      '</span>'+
-      (done?'<span class="color-green-nowrap">✅ Realizado</span>':'')+
-      (item._pessoa?'<span class="person-tag" style="white-space:nowrap">'+personAvatarHtml(item._pessoa,14)+' '+item._pessoa.nome+'</span>':'')+
-      (item.obs?'<div class="tx-obs" style="font-size:11px;color:var(--text2);margin-top:3px">💬 '+item.obs+'</div>':'')+
+    const pessoa=item._pessoa;
+    /* A animação de entrada fica no wrapper externo, não no .budget-item — animar opacity
+       diretamente no elemento que recebe a classe .done fazia a keyframe listItemIn (que
+       termina em opacity:1) sobrescrever o opacity:.55 de .budget-item.done, deixando o item
+       "realizado" sem o esmaecimento visual dos demais itens da lista. */
+    return`<div id="budget${item.id}-wrap" style="animation:listItemIn .32s cubic-bezier(.16,1,.3,1) both;animation-delay:${entryDelay}">
+      <div class="budget-item${done?' done':''}">
+      <div class="budget-check${done?' checked':''}" data-no-swipe="1" onclick="toggleBudgetDone('${item.id}')">${done?'✓':''}</div>
+      <div class="budget-info">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="card-logo" style="background:${item._cartao.color};height:20px;width:32px;font-size:10px;border-radius:4px">${item.name.substring(0,3).toUpperCase()}</div>
+          <div class="budget-name">${item.name}</div>
+        </div>
+        <div class="budget-meta">
+          <span style="white-space:nowrap">💳 Fatura cartão</span>
+          ${item.dueDay?'<span style="color:var(--blue);font-size:10px">📅 '+String(item.dueDay).padStart(2,'0')+(item.dueMonthOffset?'/'+MONTHS[(curMonth+item.dueMonthOffset)%12].slice(0,3):'')+'</span>':''}
+          ${_budgetStatusPill(item,done)}
+          ${pessoa?'<span class="person-tag" style="white-space:nowrap">'+personAvatarHtml(pessoa,14,8)+' '+pessoa.nome+'</span>':''}
+        </div>
+      </div>
+      <div class="budget-right">
+        <div class="budget-val" style="color:var(--red)">-${fmt(item.value)}</div>
+        <button class="tx-btn edit" style="margin-top:3px" onclick="showPage('cards',document.querySelector('.nav-btn:nth-child(3)'))">ver</button>
+      </div>
+      ${item._gastos&&item._gastos.length?'<div class="budget-item-full">'+renderSubitemsHtml(item._gastos.map(g=>({name:g.name,value:g.value})))+'</div>':''}
+      </div>
+    </div>`;
+  }
+  const done=doneIds.has(item.id);
+  const income=item.type==='income';
+  // Barra de progresso categoria (RN-03, RN-12)
+  var catBarHtml='';
+  if(item.categoriaKey){
+    var realizado=calcCategoriaRealizado(item.id,todosGastosRender,todasTxRender,cartoesRender,curMonth,curYear);
+    var orcado=item.value||0;
+    var pct=orcado>0?(realizado/orcado*100):0;
+    var barColor=pct>=100?'var(--red)':pct>=80?'var(--amber)':'var(--green)';
+    var barWidth=Math.min(100,pct);
+    catBarHtml='<div style="margin-top:8px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">'+
+      '<span style="font-size:11px;color:var(--text3)">Realizado</span>'+
+      '<span style="font-size:11px;color:'+barColor+';font-family:var(--mono)">'+fmt(realizado)+' / '+fmt(orcado)+'</span>'+
       '</div>'+
-      (item.subitems&&item.subitems.length?renderSubitemsHtml(item.subitems):'')+
-      catBarHtml+
-      '</div>'+
-      '<div class="budget-right">'+
-      '<div class="budget-val" style="'+(income?'color:var(--green)':'color:var(--text2)')+'">'+
-      (income?'+':'-')+fmt(item.value)+
-      '</div>'+
-      '<div class="budget-actions">'+
-      '<button class="tx-btn edit" onclick="showBudgetEditById('+item.id+')">✏️</button>'+
-      '<button class="tx-btn del" onclick="deleteBudgetItem('+item.id+')">✕</button>'+
-      '</div>'+
+      '<div style="height:4px;background:var(--bg4);border-radius:2px;overflow:hidden">'+
+      '<div style="height:100%;border-radius:2px;background:'+barColor+';width:'+barWidth+'%"></div>'+
       '</div>'+
       '</div>';
+  }
+  const swKey='budget'+item.id;
+  const isOpen=!!swipeOpen[swKey];
+  const isClosing=!!swipeClosing[swKey];
+  const isSwipeOpen=isOpen||isClosing;
+  const swipeX=isOpen?'-128px':'0px';
+  const actionsHtml=isSwipeOpen?
+    '<div style="position:absolute;inset:0;display:flex;justify-content:flex-end">'+
+    '<div style="width:20px;background:var(--blue);flex-shrink:0"></div>'+
+    '<button class="swipe-action-btn" style="background:var(--blue)" onclick="onSwipeEditBudget('+item.id+',\''+swKey+'\')">'+
+    '<svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>'+
+    'Editar'+
+    '</button>'+
+    '<button class="swipe-action-btn" style="background:var(--red)" onclick="deleteBudgetItem('+item.id+')">'+
+    '<svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>'+
+    'Excluir'+
+    '</button>'+
+    '</div>':'';
+  return'<div id="'+swKey+'-wrap" style="position:relative;overflow:hidden;border-radius:var(--radius-sm);animation:listItemIn .32s cubic-bezier(.16,1,.3,1) both;animation-delay:'+entryDelay+'">'+
+    actionsHtml+
+    '<div class="budget-item'+(done?' done':'')+'" style="transform:translateX('+swipeX+');transition:transform .28s cubic-bezier(.4,0,.2,1),opacity .15s" onpointerdown="swipeDown(event)" onpointermove="swipeMove(event)" onpointerup="swipeUp(\''+swKey+'\',event,function(){showBudgetEditById('+item.id+')},function(){patchBudgetCard('+item.id+')})">'+
+    '<div class="budget-check'+(done?' checked':'')+'" data-no-swipe="1" onclick="toggleBudgetDone('+item.id+')">'+(done?'✓':'')+'</div>'+
+    '<div class="budget-info">'+
+    '<div class="budget-name">'+item.name+'</div>'+
+    '<div class="budget-meta">'+
+    '<span class="budget-meta-row">'+
+    (CAT_LABELS[item.type]||'')+
+    (!item.delayed&&(item.recurrence==='always'||item.type==='fixed'||item.type==='income')?'<span class="badge badge-blue">fixo</span>':'')+
+    (item.installmentCur&&item.installmentTotal&&!item.subRepeatStart?'<span class="badge badge-amber">'+item.installmentCur+'/'+item.installmentTotal+'</span>':'')+
+    (item.dueDay?'<span style="color:var(--blue);font-size:10px">📅 '+String(item.dueDay).padStart(2,'0')+(item.dueMonthOffset?'/'+MONTHS[(curMonth+item.dueMonthOffset)%12].slice(0,3):'')+'</span>':'')+
+    '</span>'+
+    _budgetStatusPill(item,done)+
+    (item._pessoa?'<span class="person-tag" style="white-space:nowrap">'+personAvatarHtml(item._pessoa,14,8)+' '+item._pessoa.nome+'</span>':'')+
+    (item.obs?'<div class="tx-obs" style="font-size:11px;color:var(--text2);margin-top:3px">💬 '+item.obs+'</div>':'')+
+    '</div>'+
+    '</div>'+
+    '<div class="budget-right">'+
+    '<div class="budget-val" style="'+(income?'color:var(--green)':'color:var(--text2)')+'">'+
+    (income?'+':'-')+fmt(item.value)+
+    '</div>'+
+    '</div>'+
+    ((item.subitems&&item.subitems.length)||catBarHtml?'<div class="budget-item-full">'+
+      (item.subitems&&item.subitems.length?renderSubitemsHtml(item.subitems):'')+
+      catBarHtml+
+    '</div>':'')+
+    '</div>'+
+    '</div>';
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   FASE 4 — Resumo do Orçamento como mini-tabela (seção 6 da spec extraída).
+   Previsto x Realizado por natureza (Receita/Despesa/Saldo). `manualItems`
+   já é o equivalente do `budgetFiltered` da spec (exclui categorias puras,
+   respeita recorrência e filtro de pessoa). Fórmulas copiadas literalmente.
+   ══════════════════════════════════════════════════════════════════════ */
+function _renderBudgetSummaryTable(budgetFiltered, doneIds, catRealizado, catOrcado){
+  const tableEl=document.getElementById('budget-summary-table');
+  if(!tableEl)return 0;
+  catRealizado=catRealizado||0;
+  catOrcado=catOrcado||0;
+
+  const bIncItems=budgetFiltered.filter(function(b){return b.type==='income';});
+  const bExpItems=budgetFiltered.filter(function(b){return b.type!=='income';});
+  const bOrcInc=bIncItems.reduce(function(a,b){return a+b.value;},0);
+  const bRealInc=bIncItems.filter(function(b){return doneIds.has(b.id);}).reduce(function(a,b){return a+b.value;},0);
+  // Previsto usa o Valor Orçado Mensal fixo de cada categoria (catOrcado) — não varia se a
+  // categoria estourar o orçado. Antes o Previsto somava catRealizado + o saldo restante da
+  // categoria, que sobe junto com o gasto real quando ela passa do limite, distorcendo o que de
+  // fato foi planejado pro período.
+  const bOrcExp=bExpItems.reduce(function(a,b){return a+b.value;},0)+catOrcado;
+  const bRealExp=bExpItems.filter(function(b){return doneIds.has(b.id);}).reduce(function(a,b){return a+b.value;},0)+catRealizado;
+  const bOrcSaldo=bOrcInc-bOrcExp, bRealSaldo=bRealInc-bRealExp;
+
+  const bDoneCount=budgetFiltered.filter(function(b){return doneIds.has(b.id);}).length;
+  const bCountPct=budgetFiltered.length>0?Math.round(bDoneCount/budgetFiltered.length*100):0;
+  const sgn=function(v){return v<0?'−':'+';};
+
+  const rows=[
+    {label:'Receita', prevStr:fmt(bOrcInc), realStr:fmt(bRealInc), color:'var(--green)', isSaldo:false},
+    {label:'Despesa', prevStr:fmt(bOrcExp), realStr:fmt(bRealExp), color:'var(--red)', isSaldo:false},
+    {label:'Saldo',   prevStr:sgn(bOrcSaldo)+fmt(Math.abs(bOrcSaldo)).replace('R$ ',''),
+                       realStr:sgn(bRealSaldo)+fmt(Math.abs(bRealSaldo)).replace('R$ ',''),
+                       color:bRealSaldo>=0?'var(--green)':'var(--red)', isSaldo:true}
+  ].map(function(r){return Object.assign({},r,{rowBorder:r.isSaldo?'1px solid var(--border)':'none'});});
+
+  const budgetCountLabel=bDoneCount+'/'+budgetFiltered.length+' realizados';
+  const budgetPctW=bCountPct+'%';
+  const budgetPctColor=bCountPct<50?'var(--amber)':bCountPct<100?'var(--blue)':'var(--green)';
+
+  const rowsHtml=rows.map(function(r){
+    return'<div style="display:contents">'
+      +'<div style="font-size:12px;color:var(--text2);font-weight:500;padding:3px 0;border-top:'+r.rowBorder+'">'+r.label+'</div>'
+      +'<div style="font-size:12px;font-family:var(--mono);color:var(--text3);text-align:right;white-space:nowrap;padding:3px 0;border-top:'+r.rowBorder+'">'+r.prevStr+'</div>'
+      +'<div style="font-size:13px;font-weight:600;font-family:var(--mono);color:'+r.color+';text-align:right;white-space:nowrap;padding:3px 0;border-top:'+r.rowBorder+'">'+r.realStr+'</div>'
+      +'</div>';
   }).join('');
-  }catch(err){console.error('renderBudget error:',err);}
+
+  tableEl.innerHTML=
+    '<div style="display:flex;justify-content:space-between;margin-bottom:8px">'
+    +'<span class="card-title" style="margin-bottom:0">Resumo do mês</span>'
+    +'<span style="font-size:12px;color:var(--text3)">'+budgetCountLabel+'</span>'
+    +'</div>'
+    +'<div style="height:6px;background:var(--bg4);border-radius:3px;margin-bottom:14px;overflow:hidden">'
+    +'<div style="width:'+budgetPctW+';height:100%;background:'+budgetPctColor+';transition:width .4s"></div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:6px 12px;align-items:center">'
+    +'<div></div>'
+    +'<div style="font-size:10px;color:var(--text3);text-align:right;text-transform:uppercase;letter-spacing:.5px">Previsto</div>'
+    +'<div style="font-size:10px;color:var(--text3);text-align:right;text-transform:uppercase;letter-spacing:.5px">Realizado</div>'
+    +rowsHtml
+    +'</div>';
+  return bRealSaldo;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Lançamentos avulsos do mês — TXs feitas direto pela aba Lançamentos que
+   não passam pelo fluxo de Orçamento nem de Categorias Orçadas, então hoje
+   não aparecem em nenhum resumo. "Avulso" = sem fromBudget (não veio de um
+   item de orçamento marcado como realizado) e sem categoriaId (já contado
+   no card de Categorias Orçadas, senão duplicaria o valor em dois lugares).
+   ══════════════════════════════════════════════════════════════════════ */
+function _getAvulsosDoMes(todasTx,tm,ty,pFilter){
+  return todasTx.filter(function(t){
+    if(t.month!==tm||t.year!==ty||t.fromBudget||t.categoriaId)return false;
+    if(pFilter&&t.pessoaId!==pFilter)return false;
+    return true;
+  });
+}
+
+function _renderBudgetAvulsosCard(avulsos,saldoPlanejado){
+  const cardEl=document.getElementById('budget-avulsos-card');
+  const tableEl=document.getElementById('budget-avulsos-table');
+  if(!cardEl||!tableEl)return;
+  cardEl.style.display='block';
+
+  if(!avulsos.length){
+    tableEl.innerHTML=
+      '<div class="card-title" style="margin-bottom:8px">Lançamentos avulsos do mês</div>'
+      +'<div style="font-size:12px;color:var(--text3);text-align:center;padding:8px 0">'
+      +'Nenhum lançamento fora do orçamento neste período.'
+      +'</div>';
+    return;
+  }
+
+  const incs=avulsos.filter(function(t){return t.type==='income';});
+  const exps=avulsos.filter(function(t){return t.type!=='income';});
+  const totalInc=incs.reduce(function(a,t){return a+t.value;},0);
+  const totalExp=exps.reduce(function(a,t){return a+t.value;},0);
+  const saldoAvulsos=totalInc-totalExp;
+  const saldoTotal=saldoPlanejado+saldoAvulsos;
+  const sgn=function(v){return v<0?'−':'+';};
+
+  const sorted=[...avulsos].sort(function(a,b){return(b.date||'')>(a.date||'')?1:(b.date||'')<(a.date||'')?-1:b.id-a.id;});
+  const itemsHtml=sorted.map(function(t){
+    const inc=t.type==='income';
+    return'<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-top:1px solid var(--border)">'
+      +'<span style="font-size:12px;color:var(--text2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+t.name+'</span>'
+      +'<span style="font-size:12px;font-family:var(--mono);font-weight:600;color:'+(inc?'var(--green)':'var(--red)')+';white-space:nowrap;margin-left:8px">'+(inc?'+':'−')+fmt(t.value)+'</span>'
+      +'</div>';
+  }).join('');
+
+  tableEl.innerHTML=
+    '<div style="display:flex;justify-content:space-between;margin-bottom:8px">'
+    +'<span class="card-title" style="margin-bottom:0">Lançamentos avulsos do mês</span>'
+    +'<span style="font-size:12px;color:var(--text3)">'+avulsos.length+' lançamento'+(avulsos.length>1?'s':'')+'</span>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:center;margin-bottom:4px">'
+    +'<span style="font-size:12px;color:var(--text2)">Receita</span>'
+    +'<span style="font-size:13px;font-weight:600;font-family:var(--mono);color:var(--green);text-align:right">'+fmt(totalInc)+'</span>'
+    +'<span style="font-size:12px;color:var(--text2)">Despesa</span>'
+    +'<span style="font-size:13px;font-weight:600;font-family:var(--mono);color:var(--red);text-align:right">'+fmt(totalExp)+'</span>'
+    +'<span style="font-size:12px;color:var(--text2)">Saldo dos avulsos</span>'
+    +'<span style="font-size:13px;font-weight:600;font-family:var(--mono);color:'+(saldoAvulsos>=0?'var(--green)':'var(--red)')+';text-align:right">'+sgn(saldoAvulsos)+fmt(Math.abs(saldoAvulsos)).replace('R$ ','')+'</span>'
+    +'</div>'
+    +'<div style="max-height:180px;overflow-y:auto">'+itemsHtml+'</div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;margin-top:8px;border-top:1px solid var(--border)">'
+    +'<span style="font-size:12px;font-weight:600;color:var(--text2)">Saldo total do mês</span>'
+    +'<span style="font-size:14px;font-weight:600;font-family:var(--mono);color:'+(saldoTotal>=0?'var(--green)':'var(--red)')+'">'+sgn(saldoTotal)+fmt(Math.abs(saldoTotal)).replace('R$ ','')+'</span>'
+    +'</div>';
 }
 
 /* ── CATEGORIAS ORÇADAS ── */
@@ -1026,17 +1254,20 @@ function _renderCategoriasBudget(allBudgetItems, todosGastos, todasTx, cartoes){
   section.style.display='';
   const cats=allBudgetItems.filter(function(b){return b.categoriaKey;});
   if(!cats.length){
-    list.innerHTML='<div style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Nenhuma categoria criada ainda</div>';
+    list.innerHTML=typeof emptyStateCategoriasHtml==='function'
+      ?emptyStateCategoriasHtml()
+      :'<div style="font-size:13px;color:var(--text3);text-align:center;padding:8px 0">Nenhuma categoria criada ainda</div>';
     return;
   }
   var html='';
-  cats.forEach(function(cat){
+  cats.forEach(function(cat,idx){
     var realizado=calcCategoriaRealizado(cat.id,todosGastos,todasTx,cartoes,curMonth,curYear);
     var pct=cat.value>0?Math.min(100,Math.round(realizado/cat.value*100)):0;
     var cor=pct>=100?'var(--red)':pct>=80?'var(--amber)':'var(--green)';
-    html+='<div class="row-between-mt4" style="align-items:center">'+
-      '<div style="flex:1;min-width:0">'+
-        '<div style="font-size:14px;font-weight:500">'+cat.name+'</div>'+
+    var entryDelay=(idx*35)+'ms';
+    html+='<div class="row-between-mt4" style="align-items:center;animation:listItemIn .32s cubic-bezier(.16,1,.3,1) both;animation-delay:'+entryDelay+'">'+
+      '<div class="cat-open-detail" style="flex:1;min-width:0;cursor:pointer;transition:opacity .1s" onclick="openCategoriaDetail('+cat.id+')">'+
+        '<div style="font-size:14px;font-weight:500"><span style="margin-right:6px">'+(cat.icon||'🏷️')+'</span>'+cat.name+'</div>'+
         '<div style="font-size:11px;color:var(--text3);margin-top:2px">'+
           'Realizado: '+fmt(realizado)+' / '+fmt(cat.value)+
         '</div>'+
@@ -1045,15 +1276,93 @@ function _renderCategoriasBudget(allBudgetItems, todosGastos, todasTx, cartoes){
         '</div>'+
       '</div>'+
       '<div style="display:flex;gap:6px;margin-left:12px;flex-shrink:0">'+
-        '<button class="btn btn-ghost btn-sm" onclick="showEditCategoriaModal('+cat.id+')">Editar</button>'+
-        '<button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="deleteCategoriaModal('+cat.id+')">Excluir</button>'+
+        '<button class="cat-edit-btn" onclick="showEditCategoriaModal('+cat.id+')">Editar</button>'+
+        '<button class="cat-del-btn" onclick="deleteCategoriaModal('+cat.id+')">Excluir</button>'+
       '</div>'+
     '</div>';
   });
   list.innerHTML=html;
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+   FASE 4 — Detalhe de categoria orçada (seção 4 da spec extraída), bottom sheet.
+   Reutiliza o modal padrão do projeto (openModal/closeModal, já usado como bottom
+   sheet em toda a aplicação) em vez de criar uma nova infraestrutura de sheet.
+   ══════════════════════════════════════════════════════════════════════ */
+async function openCategoriaDetail(catId){
+  try{
+    const allBudgetItems=await budgetAll();
+    const cat=allBudgetItems.find(function(b){return b.id===catId;});
+    if(!cat){toast('Categoria não encontrada','var(--red)');return;}
+
+    let todosGastos=[],todasTx=[],cartoes=[];
+    try{todosGastos=await gastosAll();}catch(e){console.warn('[openCategoriaDetail] falha ao ler gastos, seguindo com array vazio:',e);}
+    try{todasTx=await dbAll();}catch(e){console.warn('[openCategoriaDetail] falha ao ler transações, seguindo com array vazio:',e);}
+    try{cartoes=await cartoesAll();}catch(e){console.warn('[openCategoriaDetail] falha ao ler cartões, seguindo com array vazio:',e);}
+
+    const realizado=calcCategoriaRealizado(cat.id,todosGastos,todasTx,cartoes,curMonth,curYear);
+    const pct=cat.value>0?Math.min(100,Math.round(realizado/cat.value*100)):0;
+    const cor=pct>=100?'var(--red)':pct>=80?'var(--amber)':'var(--green)';
+
+    // Lançamentos vinculados do mês corrente: união de gastos de cartão + tx normais
+    const gLinked=todosGastos.filter(function(g){return g.categoriaId===cat.id&&g.month===curMonth&&g.year===curYear;});
+    const tLinked=todasTx.filter(function(t){return t.categoriaId===cat.id&&t.month===curMonth&&t.year===curYear;});
+    const linked=[]
+      .concat(tLinked.map(function(t){return{name:t.name,value:t.value,date:t.date||''};}))
+      .concat(gLinked.map(function(g){return{name:g.name,value:g.value,date:g.date||''};}))
+      .sort(function(a,b){return(b.date||'')>(a.date||'')?1:(b.date||'')<(a.date||'')?-1:0;});
+
+    const itemsHtml=linked.length?linked.map(function(x){
+      const dateStr=x.date?fmtDate(x.date):'Sem data';
+      return'<div style="display:flex;align-items:center;gap:10px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:9px 12px">'
+        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+x.name+'</div>'
+        +'<div style="font-size:10px;color:var(--text3)">'+dateStr+'</div></div>'
+        +'<span style="color:var(--red);font-size:13px;font-weight:600;font-family:var(--mono);flex-shrink:0">−'+fmt(x.value)+'</span>'
+        +'</div>';
+    }).join(''):'<div style="font-size:12px;color:var(--text3);text-align:center;padding:8px 0">Nenhum lançamento vinculado este mês</div>';
+
+    // Evolução 6 meses (incluindo o corrente): soma gastos + tx vinculados por mês
+    const evo=[];
+    for(let i=5;i>=0;i--){
+      let em=curMonth-i,ey=curYear;while(em<0){em+=12;ey--;}
+      const gm=todosGastos.filter(function(g){return g.categoriaId===cat.id&&g.month===em&&g.year===ey;}).reduce(function(a,g){return a+g.value;},0);
+      const tm=todasTx.filter(function(t){return t.categoriaId===cat.id&&t.month===em&&t.year===ey;}).reduce(function(a,t){return a+t.value;},0);
+      evo.push({label:MONTHS[em].slice(0,3),val:gm+tm});
+    }
+    const evoMax=Math.max.apply(null,evo.map(function(e){return e.val;}).concat([1]));
+    const barsHtml=evo.map(function(e){
+      const h=Math.max(3,e.val/evoMax*100).toFixed(0)+'%';
+      return'<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:5px">'
+        +'<div style="width:100%;flex:1;display:flex;align-items:flex-end;justify-content:center">'
+        +'<div style="width:14px;height:'+h+';background:var(--amber);border-radius:3px;transform-origin:bottom;animation:barGrow .5s cubic-bezier(.34,1.56,.64,1) both"></div>'
+        +'</div>'
+        +'<span style="font-size:10px;color:var(--text3)">'+e.label+'</span>'
+        +'</div>';
+    }).join('');
+
+    openModal(
+      '<div style="font-size:16px;font-weight:600;margin-bottom:4px">'+(cat.icon||'🏷️')+' '+cat.name+'</div>'
+      +'<div style="font-size:12px;color:var(--text3);margin-bottom:10px">Realizado: '+fmt(realizado)+' / '+fmt(cat.value)+'</div>'
+      +'<div style="background:var(--bg4);border-radius:4px;height:5px;margin-bottom:18px">'
+      +'<div style="width:'+pct+'%;height:5px;border-radius:4px;background:'+cor+'"></div>'
+      +'</div>'
+      +'<div class="card-title" style="margin-bottom:8px">Lançamentos vinculados este mês</div>'
+      +'<div style="display:flex;flex-direction:column;gap:7px;margin-bottom:20px">'+itemsHtml+'</div>'
+      +'<div class="card-title" style="margin-bottom:8px">Evolução — 6 meses</div>'
+      +'<div style="display:flex;align-items:flex-end;gap:8px;height:80px;margin-bottom:8px">'+barsHtml+'</div>'
+      +'<div class="btn-row" style="margin-top:12px">'
+      +'<button class="btn btn-primary" style="flex:1" onclick="closeModal()">Fechar</button>'
+      +'</div>'
+    );
+
+  }catch(e){
+    console.error('[openCategoriaDetail]',e);
+    toast('Erro ao abrir detalhe da categoria','var(--red)');
+  }
+}
+
 function showAddCategoriaModal(){
+  var iconPickerHtml=typeof buildCatIconPickerHtml==='function'?buildCatIconPickerHtml(null):'';
   openModal(
     '<div class="modal-title">Nova Categoria Orçada</div>'+
     '<div class="form-group">'+
@@ -1066,6 +1375,7 @@ function showAddCategoriaModal(){
       '<input id="cat-valor" type="text" inputmode="decimal" placeholder="0,00" oninput="clearFieldError(\'cat-valor\')">'+
       '<div class="field-error-msg" id="cat-valor-err"></div>'+
     '</div>'+
+    iconPickerHtml+
     '<div class="btn-row">'+
       '<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>'+
       '<button class="btn btn-primary" id="cat-save-btn">Adicionar</button>'+
@@ -1092,7 +1402,8 @@ async function saveCategoriaModal(){
       type:'expense',
       recurrence:'always',
       categoriaKey:toCategoriaKey(name),
-      isCategoriaOnly:true
+      isCategoriaOnly:true,
+      icon:(typeof _catIconSelected!=='undefined'?_catIconSelected:null)||null
     });
     toast('Categoria adicionada!','var(--teal)');
     closeModal();
@@ -1105,9 +1416,10 @@ async function saveCategoriaModal(){
 
 async function showEditCategoriaModal(id){
   var all=[];
-  try{all=await budgetAll();}catch(e){}
+  try{all=await budgetAll();}catch(e){console.warn('[showEditCategoriaModal] falha ao ler itens de orçamento:',e);}
   var cat=all.find(function(b){return b.id===id;});
   if(!cat){toast('Categoria não encontrada','var(--red)');return;}
+  var iconPickerHtml=typeof buildCatIconPickerHtml==='function'?buildCatIconPickerHtml(cat.icon||null):'';
   openModal(
     '<div class="modal-title">Editar Categoria</div>'+
     '<div class="form-group">'+
@@ -1120,6 +1432,7 @@ async function showEditCategoriaModal(id){
       '<input id="cat-valor" type="text" inputmode="decimal" value="'+cat.value+'" oninput="clearFieldError(\'cat-valor\')">'+
       '<div class="field-error-msg" id="cat-valor-err"></div>'+
     '</div>'+
+    iconPickerHtml+
     '<div class="btn-row">'+
       '<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>'+
       '<button class="btn btn-primary" id="cat-save-btn">Salvar</button>'+
@@ -1141,7 +1454,8 @@ async function saveEditCategoriaModal(id, catOriginal){
     await budgetPut(Object.assign({},catOriginal,{
       name:name,
       value:valor,
-      categoriaKey:toCategoriaKey(name)
+      categoriaKey:toCategoriaKey(name),
+      icon:(typeof _catIconSelected!=='undefined'?_catIconSelected:null)||null
     }));
     toast('Categoria atualizada!','var(--teal)');
     closeModal();

@@ -1,6 +1,6 @@
 function ym(y,m){return y*100+m}
-function fmt(v){return'R$ '+Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
-function fmtN(v){return Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0})}
+function fmt(v){if(hideValues)return'R$ •••••';return'R$ '+Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function fmtN(v){if(hideValues)return'•••';return Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0})}
 function todayISO(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function fmtDate(iso){if(!iso)return'';const[y,m,d]=iso.split('-');return`${d}/${m}/${y}`}
 function addMonths(isoDate,n){
@@ -15,8 +15,23 @@ function stepMonth(isoDate,y,m){
 }
 function toast(msg,c){
   const t=document.getElementById('toast');
-  t.textContent=msg;if(c)t.style.borderColor=c;
-  t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2600);
+  document.getElementById('toast-msg').textContent=msg;
+  if(c){t.style.borderColor=c;document.getElementById('toast-bar').style.background=c;}
+  t.classList.remove('hide');t.classList.add('show');
+  clearTimeout(t._t);clearTimeout(t._t2);
+  t._t=setTimeout(()=>{
+    t.classList.remove('show');t.classList.add('hide');
+    t._t2=setTimeout(()=>t.classList.remove('hide'),250);
+  },2300);
+  // FASE 6 — E16: flash visual sutil sincronizado com o toast (feedback de conclusão de ação)
+  if(typeof fireFlash==='function')fireFlash(c||'var(--blue)');
+}
+function dismissToast(){
+  const t=document.getElementById('toast');
+  if(!t.classList.contains('show'))return;
+  clearTimeout(t._t);clearTimeout(t._t2);
+  t.classList.remove('show');t.classList.add('hide');
+  t._t2=setTimeout(()=>t.classList.remove('hide'),250);
 }
 function calcMonth(all,y,m){
   const rows=all.filter(t=>t.year===y&&t.month===m);
@@ -105,8 +120,22 @@ function closeModal(){
   delete mc.dataset.origMonth;delete mc.dataset.origYear;
   delete mc.dataset.curBudgetMonth;delete mc.dataset.curBudgetYear;
   delete mc.dataset.editingGastoId;}
+  if(typeof updateFabIconRotation==='function')updateFabIconRotation();
 }
-function openModal(html){document.getElementById('modal-content').innerHTML=html;document.getElementById('modal-overlay').classList.add('open')}
+function openModal(html){
+  document.getElementById('modal-content').innerHTML=html;
+  document.getElementById('modal-overlay').classList.add('open');
+  if(typeof updateFabIconRotation==='function')updateFabIconRotation();
+}
+
+// Modo privacidade (Fase 2) — oculta valores monetários em toda a aplicação
+function toggleHideValues(e){
+  if(e&&e.stopPropagation)e.stopPropagation();
+  hideValues=!hideValues;
+  localStorage.setItem('financas-hide-values',hideValues?'1':'0');
+  if(typeof renderAll==='function')renderAll();
+  if(typeof updateHideValuesIcon==='function')updateHideValuesIcon();
+}
 
 function renderSubitemsHtml(subitems){
   if(!subitems||!subitems.length)return '';
@@ -115,7 +144,7 @@ function renderSubitemsHtml(subitems){
     var safeName=s.name.replace(/[&<>]/g,function(m){if(m==='&')return'&amp;';if(m==='<')return'&lt;';if(m==='>')return'&gt;';return m;});
     return '<div class="tx-subitem"><span>'+safeName+'</span><span style="font-family:var(--mono)">'+fmt(s.value)+'</span></div>';
   }).join('');
-  return '<div class="tx-subtoggle" onclick="toggleSubitems(this)">▼ '+subitems.length+' subitens</div>'
+  return '<div class="tx-subtoggle" data-no-swipe onclick="toggleSubitems(this)">▼ '+subitems.length+' subitens</div>'
     +'<div class="tx-subitems">'+rows+'</div>';
 }
 
@@ -145,3 +174,15 @@ function clearAllFieldErrors(){
   document.querySelectorAll('.field-invalid').forEach(el=>el.classList.remove('field-invalid'));
   document.querySelectorAll('.field-error-msg.visible').forEach(el=>{el.textContent='';el.classList.remove('visible');});
 }
+
+/* Fase 4 — formato compacto (ex: "1.2k"). Fórmula exata da spec extraída (seção "Funções auxiliares"). */
+function fmtCompact(v){
+  if(hideValues)return'•••';
+  const sign=v<0?'−':'';
+  const a=Math.abs(v);
+  if(a>=1000)return sign+(a/1000).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'k';
+  return sign+Math.round(a).toLocaleString('pt-BR');
+}
+
+/* Fase 4 — dias no mês (m: 0-based). Usado em calendário, projeção dia a dia e horizonte de saldos. */
+function daysInMonth(y,m){return new Date(y,m+1,0).getDate();}

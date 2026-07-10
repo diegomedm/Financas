@@ -13,5 +13,11 @@ let _numpadExpr='', _numpadTarget=null, _numpadResolve=null;
 let _dbCache={};
 function invalidateCache(store){delete _dbCache[store];}
 function invalidateAllCache(){_dbCache={};}
-let _chartComposition=null;
-let _chartHistory=null;
+let txSearch='';
+let hideValues=localStorage.getItem('financas-hide-values')==='1';
+let fabOpen=false;
+// swipe state (Fase 2 — swipe em lançamentos)
+let _swX=null,_swY=null,_swMoved=false,_swIgnore=false;
+let swipeOpen={};
+let swipeClosing={};
+let _swCloseTimers={};
