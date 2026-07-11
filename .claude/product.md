@@ -48,9 +48,15 @@ Contexto: casal com renda fixa, cartões de crédito, despesas fixas e variávei
 | 3 | Gráficos/visualizações no dashboard | N2-N3 |
 | 4 | OFX/QFX importer (Nubank suporta nativamente) | N3 |
 
-## Fora do escopo (decisão explícita)
+## Fora do escopo DESTE repositório (decisão explícita)
 
 - Sincronização cloud / backend
 - Contas de usuário / autenticação
 - Multi-tenant / compartilhamento em tempo real
-- Aplicativo nativo (iOS/Android — PWA é suficiente)
+
+> **Mudança estratégica (2026-07-11):** o app nativo (Android/iOS) com contas de usuário,
+> compartilhamento por casal/família e futura assinatura DEIXOU de ser fora do escopo do
+> produto — está sendo construído no repositório privado `diegomedm/financas-app`
+> (plano aprovado: `.claude/discovery/plan-app-nativo-v1.md`). Este repositório permanece
+> como o PWA em produção durante toda a transição; os itens acima continuam fora do escopo
+> do PWA em si.

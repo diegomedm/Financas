@@ -3,6 +3,19 @@
 > Arquivo append-only. Nunca editar entradas existentes. Sempre adicionar no topo.
 
 ---
+**2026-07-11 — Sessão direta (Discovery + Fase 0 da migração para app nativo)**
+- Feito: discovery completo da migração PWA → app nativo; plano aprovado (PR #1 mesclado);
+  repo privado financas-app criado com projeto Expo SDK 57, tokens de tema portados,
+  navegação 5 abas, Dashboard estático, ADRs 001-006, typecheck + bundle validados.
+- Decisões: React Native + Expo (TS); Supabase (Fase 2); SQLite local-first com nuvem opt-in;
+  Expo Go como estratégia iOS interina; assinatura nas lojas via RevenueCat (Fase 5);
+  este repo permanece como PWA em produção durante a transição.
+- Artefatos: .claude/discovery/plan-app-nativo-v1.md (aqui); repo diegomedm/financas-app
+  completo (código + .claude próprio); product.md e current.md atualizados aqui.
+- Pendências: validação do esqueleto Fase 0 nos aparelhos reais (Expo Go); Fase 1 no repo novo.
+---
+
+---
 
 **2026-07-10 — Sessão direta (commit, push e deploy autorizados pelo usuário)**
 - Feito: usuário autorizou explicitamente commit + push, encerrando o ciclo de trabalho acumulado
