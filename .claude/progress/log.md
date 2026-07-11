@@ -4,6 +4,25 @@
 
 ---
 
+**2026-07-10 — Sessão direta (commit, push e deploy autorizados pelo usuário)**
+- Feito: usuário autorizou explicitamente commit + push, encerrando o ciclo de trabalho acumulado
+  (redesign visual completo + correções de dados + novas features de Orçamento) que vinha sendo
+  segurado desde o início do redesign, a pedido do próprio usuário.
+- Commit `f3e6817` — "feat: redesign visual completo + correções de dados + novas features de
+  Orçamento" (30 arquivos, +8432/-758 linhas). Revisão de diff feita antes do commit (scan por
+  segredos/tokens, checagem de arquivos staged) — nada suspeito encontrado.
+- Push para `origin/main` bem-sucedido (`c8af194..f3e6817`).
+- GitHub Pages atualizado automaticamente (sem workflow custom, deploy direto da branch main) —
+  **usuário confirmou a atualização testando pelo celular real**.
+- Decisões: a partir de agora, testes passam a ser feitos no dispositivo real (produção) em vez de
+  só Playwright — ajustes subsequentes devem ser validados no ambiente de dev local antes de sugerir
+  novo commit/push, mantendo a mesma regra de nunca commitar sem autorização explícita.
+- Pendências: usuário vai reportar ajustes ao vivo testando pelo celular (sessão em andamento);
+  validação da pílula de status do Orçamento pelo usuário (spec em
+  `.claude/specs/status-pill-orcamento.md`) ainda pendente.
+
+---
+
 **2026-07-10 — Sessão direta (correção do "Previsto" de categorias no resumo do Orçamento)**
 - Feito: usuário notou que o campo Previsto (Despesa) do resumo de Orçamento subia quando uma
   categoria orçada estourava o valor planejado, em vez de ficar fixo no Valor Orçado Mensal
